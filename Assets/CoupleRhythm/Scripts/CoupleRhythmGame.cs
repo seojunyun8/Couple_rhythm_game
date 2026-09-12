@@ -166,18 +166,6 @@ namespace CoupleRhythm
         private void Update()
         {
             Keyboard keyboard = Keyboard.current;
-            if (keyboard != null && keyboard.lKey.wasPressedThisFrame &&
-                (keyboard.leftCtrlKey.isPressed || keyboard.rightCtrlKey.isPressed) &&
-                (keyboard.leftShiftKey.isPressed || keyboard.rightShiftKey.isPressed) &&
-                state != GameState.Countdown)
-            {
-                if (adminOpen)
-                    CloseAdmin(true);
-                else
-                    OpenAdmin();
-                return;
-            }
-
             if (adminOpen)
                 return;
 
@@ -328,9 +316,6 @@ namespace CoupleRhythm
 
             Button admin = RuntimeUI.Button("Admin", selectionRoot, "⚙  관리자 설정", new Color(0.50f, 0.19f, 0.48f, 0.93f), Color.white, 22, OpenAdmin);
             SetFixed(admin.GetComponent<RectTransform>(), new Vector2(1f, 0f), new Vector2(-142, 54), new Vector2(230, 64));
-
-            Text shortcut = RuntimeUI.Text("Shortcut", selectionRoot, "CTRL + SHIFT + L", 16, new Color(1f, 1f, 1f, 0.9f));
-            SetFixed(shortcut.rectTransform, new Vector2(1f, 0f), new Vector2(-142, 16), new Vector2(240, 28));
         }
 
         private void CreateSongCard(Transform parent, int index, Vector2 position)
@@ -499,7 +484,7 @@ namespace CoupleRhythm
             adminRoot = RuntimeUI.Rect("Admin Settings", parent, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
             Image shade = RuntimeUI.Image("Modal Shade", adminRoot, new Color(0.10f, 0.01f, 0.10f, 0.78f));
             Button dismiss = shade.gameObject.AddComponent<Button>();
-            dismiss.onClick.AddListener(() => CloseAdmin(false));
+            dismiss.onClick.AddListener(CloseAdmin);
 
             RectTransform panel = RuntimeUI.FixedRect("Panel", adminRoot, new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(1280, 870));
             Image panelBg = panel.gameObject.AddComponent<Image>();
@@ -512,10 +497,7 @@ namespace CoupleRhythm
             SetFixed(title.rectTransform, new Vector2(0f, 1f), new Vector2(195, -73), new Vector2(310, 68));
             title.fontStyle = FontStyle.Bold;
 
-            Text hint = RuntimeUI.Text("Hint", panel, "판정과 박자 밀도를 플레이어에게 맞춰 조절하세요", 21, new Color(0.49f, 0.34f, 0.49f), TextAnchor.MiddleLeft);
-            SetFixed(hint.rectTransform, new Vector2(0f, 1f), new Vector2(420, -75), new Vector2(610, 50));
-
-            Button close = RuntimeUI.Button("Close", panel, "×", new Color(0.84f, 0.72f, 0.81f), ink, 36, () => CloseAdmin(false));
+            Button close = RuntimeUI.Button("Close", panel, "×", new Color(0.84f, 0.72f, 0.81f), ink, 36, CloseAdmin);
             SetFixed(close.GetComponent<RectTransform>(), new Vector2(1f, 1f), new Vector2(-58, -58), new Vector2(56, 56));
 
             Text judgementHeader = RuntimeUI.Text("Judgement Header", panel, "판정 · 노트 설정", 27, new Color(0.78f, 0.20f, 0.49f), TextAnchor.MiddleLeft);
@@ -546,7 +528,7 @@ namespace CoupleRhythm
                 CreateSliderRow(panel, songs[i].title + "  BPM", string.Empty, 60, 220, settings.SongBpms[i], new Vector2(325, 190 - i * 142), value => settings.SongBpms[captured] = value, true);
             }
 
-            adminHelpText = RuntimeUI.Text("Admin Help", panel, "값은 닫을 때 자동 저장됩니다  ·  느슨한 난이도: PERFECT 150ms / GOOD 260ms", 19, new Color(0.47f, 0.32f, 0.47f));
+            adminHelpText = RuntimeUI.Text("Admin Help", panel, "닫으면 자동 저장됩니다", 19, new Color(0.47f, 0.32f, 0.47f));
             SetFixed(adminHelpText.rectTransform, new Vector2(0.5f, 0f), new Vector2(0, 32), new Vector2(890, 40));
 
             Button reset = RuntimeUI.Button("Reset", panel, "기본값", new Color(0.69f, 0.55f, 0.66f), Color.white, 20, ResetAdminSettings);
@@ -604,7 +586,7 @@ namespace CoupleRhythm
         private void SelectSong(int index)
         {
             if (adminOpen)
-                CloseAdmin(false);
+                CloseAdmin();
             StopAllCoroutines();
             musicSource.Stop();
             selectedSongIndex = Mathf.Clamp(index, 0, songs.Length - 1);
@@ -1088,7 +1070,7 @@ namespace CoupleRhythm
             adminRoot.SetAsLastSibling();
         }
 
-        private void CloseAdmin(bool shortcut)
+        private void CloseAdmin()
         {
             if (!adminOpen)
                 return;
@@ -1099,8 +1081,6 @@ namespace CoupleRhythm
             if (resumeMusicAfterAdmin && state == GameState.Playing)
                 musicSource.UnPause();
             resumeMusicAfterAdmin = false;
-            if (shortcut && adminHelpText != null)
-                adminHelpText.text = "값은 닫을 때 자동 저장됩니다  ·  CTRL + SHIFT + L 로 언제든 열기";
         }
 
         private void ResetAdminSettings()
@@ -1118,7 +1098,7 @@ namespace CoupleRhythm
             settings.HeartsPerBeat = 1;
             settings.Save();
             RefreshAdminSliders();
-            adminHelpText.text = "친절 모드 적용 완료 ♥  PERFECT 150ms · GOOD 270ms · 협동 210ms";
+            adminHelpText.text = "친절 모드 적용 완료 ♥";
         }
 
         private void RefreshAdminSliders()

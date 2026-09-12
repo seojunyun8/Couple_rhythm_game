@@ -8,7 +8,7 @@ This folder contains the runtime-built two-player rhythm game.
 - `2P`: red button
 - `Together!`: press the blue and red buttons together
 - Development keyboard fallback: `A` for 1P and `L` for 2P
-- Admin settings: `Ctrl + Shift + L`
+- Admin settings: use the gear button on the song-select or gameplay screen
 - Return to song select during play: `Esc`
 
 ## Adding authorised music
