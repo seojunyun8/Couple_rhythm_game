@@ -24,6 +24,10 @@ When a file is absent, the game automatically uses a generated demo beat so ever
 
 Every round builds a fresh chart by combining random four-beat rhythm templates. Notes remain locked to quarter-, half-, or whole-beat positions, while the generator varies rests, alternating patterns, three-to-four-note rolls, duet notes, and one-to-two-beat hold notes. Higher admin note-density levels unlock denser subdivisions.
 
+Density level 4 uses dedicated high-density templates with roughly 6–12 notes per four-beat measure, frequent quarter-beat streams, more alternating inputs, and a higher duet-note rate. Sparse level 1–2 templates are excluded at this level.
+
+Duet notes use a higher 20.5–28% chance on eligible beats, depending on note density. The generator also prevents more than two consecutive measures from passing without a duet opportunity so the couple mechanic stays central to each round.
+
 Hold notes must be pressed on the head and kept down until the tail reaches the target; releasing close to the end beat is also accepted. Pressing a button when no matching note is inside the judgement window costs 250 points, and wrong presses are listed separately on the result screen.
 
 Starter BPM values are `121 / 147 / 128 / 128` in the same order as the list above. Because an imported file may include leading silence or a different master, use the admin audio offset and BPM controls for final calibration.

@@ -66,7 +66,10 @@ namespace CoupleRhythm
             new RhythmTemplate(new[] { 0f, 1.5f, 2f, 2.5f, 3f }, 1, 4, 1),
             new RhythmTemplate(new[] { 0f, 0.5f, 1f, 2f, 2.5f, 3f, 3.5f }, 3, 4, 2),
             new RhythmTemplate(new[] { 0f, 0.25f, 0.5f, 0.75f, 2f, 3f }, 0, 4, 3),
-            new RhythmTemplate(new[] { 0f, 0.75f, 1.5f, 2.25f, 3f, 3.5f }, -1, 0, 4)
+            new RhythmTemplate(new[] { 0f, 0.75f, 1.5f, 2.25f, 3f, 3.5f }, -1, 0, 4),
+            new RhythmTemplate(new[] { 0f, 0.25f, 0.5f, 0.75f, 1.25f, 1.5f, 2f, 2.25f, 2.5f, 3f, 3.5f }, 0, 4, 4),
+            new RhythmTemplate(new[] { 0f, 0.5f, 1f, 1.25f, 1.5f, 1.75f, 2.5f, 3f, 3.25f, 3.5f, 3.75f }, 2, 4, 4),
+            new RhythmTemplate(new[] { 0f, 0.25f, 0.5f, 0.75f, 1f, 1.5f, 2f, 2.5f, 2.75f, 3f, 3.25f, 3.5f }, 0, 4, 4)
         };
 
         private static CoupleRhythmGame instance;
@@ -703,6 +706,7 @@ namespace CoupleRhythm
             int previousTemplate = -1;
             int measuresSinceBurst = 1;
             int measuresSinceHold = 0;
+            int measuresSinceDuet = 1;
             int lastSoloPlayer = 0;
             int soloRunLength = 0;
 
@@ -718,9 +722,11 @@ namespace CoupleRhythm
                 previousTemplate = templateIndex;
                 measuresSinceBurst = template.BurstLength >= 3 ? 0 : measuresSinceBurst + 1;
 
-                bool useSingleLaneBurst = random.NextDouble() < 0.58;
+                double singleLaneBurstChance = density >= 4 ? 0.34 : density == 3 ? 0.46 : 0.58;
+                bool useSingleLaneBurst = random.NextDouble() < singleLaneBurstChance;
                 int burstFirstPlayer = random.Next(0, 2) == 0 ? 1 : 2;
                 bool holdCreatedThisMeasure = false;
+                bool duetCreatedThisMeasure = false;
 
                 for (int noteIndex = 0; noteIndex < template.BeatOffsets.Length; noteIndex++)
                 {
@@ -748,9 +754,11 @@ namespace CoupleRhythm
                             desiredPlayer = 1;
                         kind = desiredPlayer == 1 ? HeartKind.PlayerOne : HeartKind.PlayerTwo;
                     }
-                    else if (playerOneFree && playerTwoFree && random.NextDouble() < 0.16)
+                    else if (playerOneFree && playerTwoFree &&
+                        ((measuresSinceDuet >= 2 && !duetCreatedThisMeasure) || random.NextDouble() < 0.18 + density * 0.025))
                     {
                         kind = HeartKind.Duet;
+                        duetCreatedThisMeasure = true;
                     }
                     else
                     {
@@ -808,20 +816,20 @@ namespace CoupleRhythm
                 }
 
                 measuresSinceHold = holdCreatedThisMeasure ? 0 : measuresSinceHold + 1;
+                measuresSinceDuet = duetCreatedThisMeasure ? 0 : measuresSinceDuet + 1;
             }
         }
 
         private static int ChooseRhythmTemplate(System.Random random, int previousTemplate, int density, bool forceBurst)
         {
+            int minimumTemplateDensity = density >= 4 ? 3 : density == 3 ? 2 : 1;
             for (int attempt = 0; attempt < 32; attempt++)
             {
                 int index = random.Next(0, RhythmTemplates.Length);
                 RhythmTemplate candidate = RhythmTemplates[index];
-                if (index == previousTemplate || candidate.MinimumDensity > density)
+                if (index == previousTemplate || candidate.MinimumDensity > density || candidate.MinimumDensity < minimumTemplateDensity)
                     continue;
                 if (forceBurst && candidate.BurstLength < 3)
-                    continue;
-                if (density >= 3 && candidate.MinimumDensity < density - 1 && random.NextDouble() < 0.4)
                     continue;
                 return index;
             }
@@ -829,7 +837,7 @@ namespace CoupleRhythm
             for (int index = 0; index < RhythmTemplates.Length; index++)
             {
                 RhythmTemplate candidate = RhythmTemplates[index];
-                if (index != previousTemplate && candidate.MinimumDensity <= density && (!forceBurst || candidate.BurstLength >= 3))
+                if (index != previousTemplate && candidate.MinimumDensity >= minimumTemplateDensity && candidate.MinimumDensity <= density && (!forceBurst || candidate.BurstLength >= 3))
                     return index;
             }
             return 2;
