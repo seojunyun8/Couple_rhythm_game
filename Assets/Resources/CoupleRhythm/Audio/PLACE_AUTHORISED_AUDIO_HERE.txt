@@ -1,0 +1,9 @@
+Add audio files you are authorised to use here.
+
+Expected base file names:
+- redred
+- its_me
+- lemonade
+- rude
+
+Unity-supported formats such as .wav, .mp3, or .ogg can be used. Do not include the extension in the names above.
