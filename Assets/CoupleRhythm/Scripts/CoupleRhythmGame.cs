@@ -12,6 +12,7 @@ namespace CoupleRhythm
     {
         private enum GameState
         {
+            Payment,
             SongSelect,
             Countdown,
             Playing,
@@ -88,6 +89,7 @@ namespace CoupleRhythm
         private RhythmSettings settings;
         private AudioSource musicSource;
         private Canvas canvas;
+        private RectTransform paymentRoot;
         private RectTransform selectionRoot;
         private RectTransform gameRoot;
         private RectTransform countdownRoot;
@@ -160,7 +162,7 @@ namespace CoupleRhythm
 
             BuildInterface();
             EnsureEventSystem();
-            ShowSongSelect();
+            ShowPayment();
         }
 
         private void Update()
@@ -255,6 +257,7 @@ namespace CoupleRhythm
             scaler.matchWidthOrHeight = 0.5f;
 
             BuildBackground(canvas.transform);
+            BuildPaymentScreen(canvas.transform);
             BuildSongSelect(canvas.transform);
             BuildGameScreen(canvas.transform);
             BuildResultScreen(canvas.transform);
@@ -280,6 +283,47 @@ namespace CoupleRhythm
 
             Image veil = RuntimeUI.Image("Pink Veil", parent, new Color(0.67f, 0.15f, 0.40f, 0.08f));
             veil.raycastTarget = false;
+        }
+
+        private void BuildPaymentScreen(Transform parent)
+        {
+            paymentRoot = RuntimeUI.Rect("Payment", parent, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
+
+            Text eyebrow = RuntimeUI.Text("Eyebrow", paymentRoot, "♥  COUPLE RHYTHM GAME  ♥", 24, new Color(0.76f, 0.20f, 0.46f));
+            SetFixed(eyebrow.rectTransform, new Vector2(0.5f, 1f), new Vector2(0, -48), new Vector2(900, 42));
+            eyebrow.fontStyle = FontStyle.Bold;
+
+            Text title = RuntimeUI.Text("Title", paymentRoot, "먼저 입금을 완료해 주세요", 47, Color.white);
+            SetFixed(title.rectTransform, new Vector2(0.5f, 1f), new Vector2(0, -101), new Vector2(1100, 66));
+            title.fontStyle = FontStyle.Bold;
+            RuntimeUI.AddOutline(title, new Color(0.63f, 0.18f, 0.41f, 0.72f), new Vector2(4, -4));
+
+            Text subtitle = RuntimeUI.Text("Subtitle", paymentRoot, "QR을 스캔해 500원을 보낸 뒤 아래 버튼을 눌러주세요.", 24, ink);
+            SetFixed(subtitle.rectTransform, new Vector2(0.5f, 1f), new Vector2(0, -156), new Vector2(900, 44));
+
+            RectTransform qrPanel = RuntimeUI.FixedRect("QR Panel", paymentRoot, new Vector2(0.5f, 0.5f), new Vector2(0, -22), new Vector2(620, 684));
+            Image qrPanelBg = qrPanel.gameObject.AddComponent<Image>();
+            qrPanelBg.sprite = RuntimeUI.RoundedSprite;
+            qrPanelBg.type = Image.Type.Sliced;
+            qrPanelBg.color = new Color(1f, 1f, 1f, 0.96f);
+            RuntimeUI.AddShadow(qrPanelBg, new Color(0.48f, 0.10f, 0.32f, 0.25f), new Vector2(0, -12));
+
+            RectTransform qrRect = RuntimeUI.FixedRect("KakaoPay QR", qrPanel, new Vector2(0.5f, 0.5f), new Vector2(0, 10), new Vector2(520, 584));
+            RawImage qrImage = qrRect.gameObject.AddComponent<RawImage>();
+            qrImage.color = Color.white;
+            qrImage.raycastTarget = false;
+            qrImage.texture = Resources.Load<Texture2D>("CoupleRhythm/Art/KakaoTalk_20260913_143348512");
+
+            if (qrImage.texture == null)
+            {
+                Text missing = RuntimeUI.Text("Missing QR", qrPanel, "QR 이미지를 불러오지 못했습니다.\nResources/CoupleRhythm/Art 경로를 확인해 주세요.", 23, new Color(0.78f, 0.20f, 0.49f));
+                SetFixed(missing.rectTransform, new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(520, 140));
+                missing.fontStyle = FontStyle.Bold;
+            }
+
+            Button confirm = RuntimeUI.Button("Confirm Payment", paymentRoot, "입금 완료  ·  노래 고르기  ♥", new Color(0.93f, 0.28f, 0.58f), Color.white, 28, ConfirmPayment);
+            SetFixed(confirm.GetComponent<RectTransform>(), new Vector2(0.5f, 0f), new Vector2(0, 61), new Vector2(520, 78));
+            RuntimeUI.AddShadow(confirm.targetGraphic, new Color(0.48f, 0.10f, 0.32f, 0.25f), new Vector2(0, -8));
         }
 
         private void BuildSongSelect(Transform parent)
@@ -599,6 +643,7 @@ namespace CoupleRhythm
             ClearNotes();
             ResetScore();
             state = GameState.Countdown;
+            paymentRoot.gameObject.SetActive(false);
             selectionRoot.gameObject.SetActive(false);
             resultRoot.gameObject.SetActive(false);
             gameRoot.gameObject.SetActive(true);
@@ -1019,10 +1064,30 @@ namespace CoupleRhythm
             ClearNotes();
             state = GameState.SongSelect;
             adminOpen = false;
+            paymentRoot.gameObject.SetActive(false);
             selectionRoot.gameObject.SetActive(true);
             gameRoot.gameObject.SetActive(false);
             resultRoot.gameObject.SetActive(false);
             adminRoot.gameObject.SetActive(false);
+        }
+
+        private void ShowPayment()
+        {
+            StopAllCoroutines();
+            musicSource.Stop();
+            ClearNotes();
+            state = GameState.Payment;
+            adminOpen = false;
+            paymentRoot.gameObject.SetActive(true);
+            selectionRoot.gameObject.SetActive(false);
+            gameRoot.gameObject.SetActive(false);
+            resultRoot.gameObject.SetActive(false);
+            adminRoot.gameObject.SetActive(false);
+        }
+
+        private void ConfirmPayment()
+        {
+            ShowSongSelect();
         }
 
         private void ResetScore()
