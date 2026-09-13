@@ -298,10 +298,7 @@ namespace CoupleRhythm
             title.fontStyle = FontStyle.Bold;
             RuntimeUI.AddOutline(title, new Color(0.63f, 0.18f, 0.41f, 0.72f), new Vector2(4, -4));
 
-            Text subtitle = RuntimeUI.Text("Subtitle", paymentRoot, "QR을 스캔해 500원을 보낸 뒤 아래 버튼을 눌러주세요.", 24, ink);
-            SetFixed(subtitle.rectTransform, new Vector2(0.5f, 1f), new Vector2(0, -156), new Vector2(900, 44));
-
-            RectTransform qrPanel = RuntimeUI.FixedRect("QR Panel", paymentRoot, new Vector2(0.5f, 0.5f), new Vector2(0, -22), new Vector2(620, 684));
+            RectTransform qrPanel = RuntimeUI.FixedRect("QR Panel", paymentRoot, new Vector2(0.5f, 0.5f), new Vector2(0, 2), new Vector2(620, 684));
             Image qrPanelBg = qrPanel.gameObject.AddComponent<Image>();
             qrPanelBg.sprite = RuntimeUI.RoundedSprite;
             qrPanelBg.type = Image.Type.Sliced;

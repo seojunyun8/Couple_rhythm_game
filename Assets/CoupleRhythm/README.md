@@ -4,7 +4,7 @@ This folder contains the runtime-built two-player rhythm game.
 
 ## Controls
 
-- On launch, scan the KakaoPay QR and send 500 KRW, then press `입금 완료 · 노래 고르기` to open song selection.
+- On launch, the KakaoPay QR is shown. The operator presses `입금 완료 · 노래 고르기` after confirming payment to open song selection.
 - The confirmation button is a manual confirmation step; it does not query KakaoPay or a bank server.
 - `1P`: blue button
 - `2P`: red button
