@@ -6,12 +6,24 @@ This folder contains the runtime-built two-player rhythm game.
 
 - On launch, the KakaoPay QR is shown. The operator presses `입금 완료 · 노래 고르기` after confirming payment to open song selection.
 - The confirmation button is a manual confirmation step; it does not query KakaoPay or a bank server.
+- When a round ends, the final accuracy and judgement stats are shown. The operator presses `다음 게임하기` to return to the QR payment screen.
 - `1P`: blue button
 - `2P`: red button
 - `Together!`: press the blue and red buttons together
 - Development keyboard fallback: `A` for 1P and `L` for 2P
 - Admin settings: use the gear button on the song-select or gameplay screen
 - Return to song select during play: `Esc`
+
+## Accuracy and prizes
+
+Accuracy is normalized by the complete chart, so songs with different durations and note counts use the same prize condition.
+
+- `PERFECT`: 100% credit
+- `GOOD`: 60% credit
+- `MISS`: 0% credit
+- Duet and hold notes have double weight because they require two inputs or sustained input.
+- Every wrong press adds the same penalty as one missed normal note.
+- Prize condition: final accuracy of 80% or higher
 
 ## Adding authorised music
 

@@ -128,10 +128,5 @@ namespace CoupleRhythm
             return HitRating.Miss;
         }
 
-        public static int Score(HitRating rating, HeartKind kind)
-        {
-            int baseScore = rating == HitRating.Perfect ? 1000 : rating == HitRating.Good ? 500 : 0;
-            return kind == HeartKind.Duet ? baseScore * 2 : baseScore;
-        }
     }
 }
