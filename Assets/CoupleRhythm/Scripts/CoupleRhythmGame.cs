@@ -219,7 +219,8 @@ namespace CoupleRhythm
                 if (musicSource.clip == null)
                     return 0f;
                 float audioTime = musicSource.timeSamples > 0 ? musicSource.timeSamples / (float)musicSource.clip.frequency : musicSource.time;
-                return audioTime - clipPlaybackStart + settings.AudioOffset;
+                float chartDelay = usingDemoClip ? 0f : songs[selectedSongIndex].chartDelaySeconds;
+                return audioTime - clipPlaybackStart + settings.AudioOffset - chartDelay;
             }
         }
 
@@ -239,12 +240,12 @@ namespace CoupleRhythm
         {
             return new[]
             {
-                // Beat offsets were measured from the decoded AudioClip transients. They
-                // anchor each generated chart to the master recording instead of time 0.
-                new SongDefinition("redred", "REDRED", "CORTIS", "redred", 121f, 0.2845f, 40.0f, 62.0f, new Color(1f, 0.31f, 0.42f)),
-                new SongDefinition("its_me", "it's me", "ILLIT · 아일릿", "its_me", 147f, 0.1640f, 32.0f, 59.0f, new Color(0.50f, 0.57f, 1f)),
-                new SongDefinition("lemonade", "LEMONADE", "aespa · 에스파", "lemonade", 128f, 0.1695f, 69.0f, 89.0f, new Color(1f, 0.72f, 0.20f)),
-                new SongDefinition("rude", "RUDE!", "Hearts2Hearts · 하츠투하츠", "rude", 128f, 0.3805f, 170.0f, 198.0f, new Color(0.78f, 0.37f, 0.96f))
+                // Positive delay values move the chart later to match the decoded
+                // AudioClip's measured sixteenth-note grid.
+                new SongDefinition("redred", "REDRED", "CORTIS", "redred", 121f, 0.0125f, 40.0f, 62.0f, new Color(1f, 0.31f, 0.42f)),
+                new SongDefinition("its_me", "it's me", "ILLIT · 아일릿", "its_me", 147f, 0.0390f, 32.0f, 59.0f, new Color(0.50f, 0.57f, 1f)),
+                new SongDefinition("lemonade", "LEMONADE", "aespa · 에스파", "lemonade", 128f, 0.0330f, 69.0f, 89.0f, new Color(1f, 0.72f, 0.20f)),
+                new SongDefinition("rude", "RUDE!", "Hearts2Hearts · 하츠투하츠", "rude", 128f, 0.0230f, 170.0f, 198.0f, new Color(0.78f, 0.37f, 0.96f))
             };
         }
 
@@ -710,9 +711,7 @@ namespace CoupleRhythm
         private void BeginPlayback()
         {
             float secondsPerBeat = 60f / Mathf.Max(1f, currentSongBpm);
-            SongDefinition song = songs[selectedSongIndex];
-            float beatOffset = usingDemoClip ? 0f : song.beatOffsetSeconds;
-            float firstAbsoluteBeat = beatOffset + Mathf.Ceil((clipPlaybackStart + TravelTime - beatOffset) / secondsPerBeat) * secondsPerBeat;
+            float firstAbsoluteBeat = Mathf.Ceil((clipPlaybackStart + TravelTime) / secondsPerBeat) * secondsPerBeat;
             BuildRhythmChart(firstAbsoluteBeat - clipPlaybackStart);
             nextNoteIndex = 0;
             musicSource.volume = 0f;
