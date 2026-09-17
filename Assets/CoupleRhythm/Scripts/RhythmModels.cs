@@ -26,17 +26,19 @@ namespace CoupleRhythm
         public string artist;
         public string resourceName;
         public float defaultBpm;
+        public float beatOffsetSeconds;
         public float highlightStartSeconds;
         public float highlightEndSeconds;
         public Color accent;
 
-        public SongDefinition(string id, string title, string artist, string resourceName, float defaultBpm, float highlightStartSeconds, float highlightEndSeconds, Color accent)
+        public SongDefinition(string id, string title, string artist, string resourceName, float defaultBpm, float beatOffsetSeconds, float highlightStartSeconds, float highlightEndSeconds, Color accent)
         {
             this.id = id;
             this.title = title;
             this.artist = artist;
             this.resourceName = resourceName;
             this.defaultBpm = defaultBpm;
+            this.beatOffsetSeconds = beatOffsetSeconds;
             this.highlightStartSeconds = highlightStartSeconds;
             this.highlightEndSeconds = highlightEndSeconds;
             this.accent = accent;

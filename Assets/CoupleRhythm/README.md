@@ -44,7 +44,7 @@ Duet notes use a higher 20.5–28% chance on eligible beats, depending on note d
 
 Hold notes must be pressed on the head and kept down until the tail reaches the target; releasing close to the end beat is also accepted. Pressing a button when no matching note is inside the judgement window costs 250 points, and wrong presses are listed separately on the result screen.
 
-Starter BPM values are `121 / 147 / 128 / 128` in the same order as the list above. Because an imported file may include leading silence or a different master, use the admin audio offset and BPM controls for final calibration.
+Starter BPM values are `121 / 147 / 128 / 128` in the same order as the list above. The bundled masters use measured per-song beat-grid offsets, while the admin audio offset remains available for device/input-latency calibration. If an audio file is replaced with a different master, its beat-grid offset must be measured again.
 
 ## Highlight play ranges
 
