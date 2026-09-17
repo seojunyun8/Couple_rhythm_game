@@ -104,6 +104,8 @@ namespace CoupleRhythm
         private Text resultAccuracyText;
         private Text resultStatsText;
         private Text resultRewardText;
+        private RectTransform fireworksRoot;
+        private Text celebrationText;
         private Text adminHelpText;
         private Image progressFill;
         private readonly Image[] targets = new Image[3];
@@ -136,7 +138,8 @@ namespace CoupleRhythm
         private const float TargetY = -327f;
         private const float GoodAccuracyRatio = 0.60f;
         private const float WrongPressAccuracyWeight = 1f;
-        private const float PrizeAccuracyThreshold = 80f;
+        private const float PrizeAccuracyThreshold = 90f;
+        private const float PremiumPrizeAccuracyThreshold = 100f;
         private static readonly float[] LaneX = { -365f, 0f, 365f };
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
@@ -493,6 +496,9 @@ namespace CoupleRhythm
             Image shade = RuntimeUI.Image("Shade", resultRoot, new Color(0.29f, 0.05f, 0.28f, 0.68f));
             shade.raycastTarget = false;
 
+            fireworksRoot = RuntimeUI.Rect("Fireworks", resultRoot, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
+            fireworksRoot.gameObject.SetActive(false);
+
             RectTransform panel = RuntimeUI.FixedRect("Panel", resultRoot, new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(820, 710));
             Image panelBg = panel.gameObject.AddComponent<Image>();
             panelBg.sprite = RuntimeUI.RoundedSprite;
@@ -516,11 +522,18 @@ namespace CoupleRhythm
             SetFixed(resultStatsText.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0, -25), new Vector2(650, 205));
 
             resultRewardText = RuntimeUI.Text("Reward", panel, string.Empty, 24, new Color(0.79f, 0.21f, 0.51f));
-            SetFixed(resultRewardText.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0, -187), new Vector2(670, 70));
+            SetFixed(resultRewardText.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0, -187), new Vector2(670, 90));
             resultRewardText.fontStyle = FontStyle.Bold;
 
             Button nextGame = RuntimeUI.Button("Next Game", panel, "다음 게임하기  ♥", new Color(0.93f, 0.28f, 0.58f), Color.white, 26, ShowPayment);
             SetFixed(nextGame.GetComponent<RectTransform>(), new Vector2(0.5f, 0f), new Vector2(0, 72), new Vector2(420, 76));
+
+            celebrationText = RuntimeUI.Text("Celebration", resultRoot, "축하합니다!", 62, new Color(1f, 0.86f, 0.28f));
+            SetFixed(celebrationText.rectTransform, new Vector2(0.5f, 1f), new Vector2(0, -76), new Vector2(920, 100));
+            celebrationText.fontStyle = FontStyle.Bold;
+            celebrationText.raycastTarget = false;
+            RuntimeUI.AddOutline(celebrationText, new Color(0.67f, 0.08f, 0.38f, 0.95f), new Vector2(5f, -5f));
+            celebrationText.gameObject.SetActive(false);
         }
 
         private void BuildAdminPanel(Transform parent)
@@ -1055,7 +1068,9 @@ namespace CoupleRhythm
             gameRoot.gameObject.SetActive(false);
             resultRoot.gameObject.SetActive(true);
             float finalAccuracy = Mathf.Round(CalculateAccuracy(true) * 10f) / 10f;
+            bool premiumPrizeEarned = finalAccuracy >= PremiumPrizeAccuracyThreshold;
             bool prizeEarned = finalAccuracy >= PrizeAccuracyThreshold;
+            ResetCelebration();
             resultAccuracyText.text = FormatAccuracy(finalAccuracy);
             resultStatsText.text =
                 "PERFECT     " + perfectCount + "\n" +
@@ -1063,17 +1078,135 @@ namespace CoupleRhythm
                 "MISS           " + missCount + "\n" +
                 "WRONG PRESS  " + wrongPressCount + "\n" +
                 "MAX COMBO  " + maxCombo;
-            resultRewardText.text = prizeEarned
-                ? "♥ 상품 획득 성공! 관리자에게 보여주세요 ♥"
-                : "상품 획득 기준은 정확도 " + PrizeAccuracyThreshold.ToString("0") + "% 이상입니다.";
-            resultRewardText.color = prizeEarned
-                ? new Color(0.89f, 0.22f, 0.52f)
-                : new Color(0.46f, 0.31f, 0.47f);
+            if (premiumPrizeEarned)
+            {
+                resultRewardText.text = "♥ 100% 달성! 아주 좋은 상품을 드립니다 ♥\n관리자에게 이 화면을 보여주세요!";
+                resultRewardText.color = new Color(0.93f, 0.45f, 0.08f);
+                StartCoroutine(CelebrationRoutine());
+            }
+            else if (prizeEarned)
+            {
+                resultRewardText.text = "♥ 상품 획득 성공! 관리자에게 보여주세요 ♥";
+                resultRewardText.color = new Color(0.89f, 0.22f, 0.52f);
+            }
+            else
+            {
+                resultRewardText.text = "상품 획득 기준은 정확도 " + PrizeAccuracyThreshold.ToString("0") + "% 이상입니다.";
+                resultRewardText.color = new Color(0.46f, 0.31f, 0.47f);
+            }
+        }
+
+        private IEnumerator CelebrationRoutine()
+        {
+            fireworksRoot.gameObject.SetActive(true);
+            celebrationText.gameObject.SetActive(true);
+            celebrationText.rectTransform.localScale = Vector3.one * 0.35f;
+
+            for (float elapsed = 0f; elapsed < 0.55f; elapsed += Time.unscaledDeltaTime)
+            {
+                float t = Mathf.Clamp01(elapsed / 0.55f);
+                float overshoot = 1f + Mathf.Sin(t * Mathf.PI) * (1f - t) * 0.5f;
+                celebrationText.rectTransform.localScale = Vector3.one * Mathf.Lerp(0.35f, overshoot, 1f - Mathf.Pow(1f - t, 3f));
+                yield return null;
+            }
+            celebrationText.rectTransform.localScale = Vector3.one;
+
+            Vector2[] burstPositions =
+            {
+                new Vector2(-670f, 300f),
+                new Vector2(680f, 270f),
+                new Vector2(-760f, -80f),
+                new Vector2(760f, -110f),
+                new Vector2(-510f, 390f),
+                new Vector2(520f, 390f)
+            };
+
+            for (int i = 0; i < burstPositions.Length; i++)
+            {
+                StartCoroutine(FireworkBurstRoutine(burstPositions[i], i * 7919 + 104729));
+                yield return new WaitForSecondsRealtime(0.2f);
+            }
+        }
+
+        private IEnumerator FireworkBurstRoutine(Vector2 origin, int seed)
+        {
+            const int particleCount = 22;
+            const float duration = 1.15f;
+            System.Random random = new System.Random(seed);
+            RectTransform[] particles = new RectTransform[particleCount];
+            Image[] particleImages = new Image[particleCount];
+            Vector2[] directions = new Vector2[particleCount];
+            float[] distances = new float[particleCount];
+            float[] rotations = new float[particleCount];
+            Color[] palette =
+            {
+                new Color(1f, 0.82f, 0.15f),
+                new Color(1f, 0.30f, 0.58f),
+                new Color(0.26f, 0.76f, 1f),
+                new Color(0.72f, 0.39f, 1f),
+                new Color(1f, 0.49f, 0.18f),
+                new Color(0.28f, 0.95f, 0.70f)
+            };
+
+            for (int i = 0; i < particleCount; i++)
+            {
+                float angle = Mathf.PI * 2f * i / particleCount + (float)(random.NextDouble() - 0.5) * 0.18f;
+                directions[i] = new Vector2(Mathf.Cos(angle), Mathf.Sin(angle));
+                distances[i] = Mathf.Lerp(125f, 235f, (float)random.NextDouble());
+                rotations[i] = Mathf.Lerp(-220f, 220f, (float)random.NextDouble());
+                Color color = palette[random.Next(palette.Length)];
+                Sprite sprite = i % 5 == 0 ? RuntimeUI.HeartSprite : RuntimeUI.CircleSprite;
+                Image particle = RuntimeUI.Image("Firework Spark", fireworksRoot, color, sprite);
+                float size = sprite == RuntimeUI.HeartSprite
+                    ? Mathf.Lerp(24f, 39f, (float)random.NextDouble())
+                    : Mathf.Lerp(12f, 24f, (float)random.NextDouble());
+                SetFixed(particle.rectTransform, new Vector2(0.5f, 0.5f), origin, Vector2.one * size);
+                particle.raycastTarget = false;
+                particles[i] = particle.rectTransform;
+                particleImages[i] = particle;
+            }
+
+            for (float elapsed = 0f; elapsed < duration; elapsed += Time.unscaledDeltaTime)
+            {
+                float t = Mathf.Clamp01(elapsed / duration);
+                float expansion = 1f - Mathf.Pow(1f - t, 3f);
+                float alpha = 1f - Mathf.Clamp01((t - 0.48f) / 0.52f);
+                float scale = Mathf.Lerp(0.25f, 1f, Mathf.Clamp01(t * 7f)) * Mathf.Lerp(1f, 0.35f, t);
+
+                for (int i = 0; i < particleCount; i++)
+                {
+                    particles[i].anchoredPosition = origin + directions[i] * distances[i] * expansion + Vector2.down * (115f * t * t);
+                    particles[i].localRotation = Quaternion.Euler(0f, 0f, rotations[i] * t);
+                    particles[i].localScale = Vector3.one * scale;
+                    Color color = particleImages[i].color;
+                    particleImages[i].color = new Color(color.r, color.g, color.b, alpha);
+                }
+                yield return null;
+            }
+
+            for (int i = 0; i < particleCount; i++)
+                Destroy(particles[i].gameObject);
+        }
+
+        private void ResetCelebration()
+        {
+            if (celebrationText != null)
+            {
+                celebrationText.gameObject.SetActive(false);
+                celebrationText.rectTransform.localScale = Vector3.one;
+            }
+
+            if (fireworksRoot == null)
+                return;
+            fireworksRoot.gameObject.SetActive(false);
+            for (int i = fireworksRoot.childCount - 1; i >= 0; i--)
+                Destroy(fireworksRoot.GetChild(i).gameObject);
         }
 
         private void ShowSongSelect()
         {
             StopAllCoroutines();
+            ResetCelebration();
             musicSource.Stop();
             ClearNotes();
             state = GameState.SongSelect;
@@ -1088,6 +1221,7 @@ namespace CoupleRhythm
         private void ShowPayment()
         {
             StopAllCoroutines();
+            ResetCelebration();
             musicSource.Stop();
             ClearNotes();
             state = GameState.Payment;
