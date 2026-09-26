@@ -112,6 +112,8 @@ namespace CoupleRhythm
         private bool paymentPending;
         private bool prizePending;
         private bool prizeIsLegendary;
+        private bool prizeEligible;
+        private bool prizeRedeemed;
         private RectTransform fireworksRoot;
         private Text celebrationText;
         private Text adminHelpText;
@@ -1119,6 +1121,8 @@ namespace CoupleRhythm
                 resultRewardText.color = new Color(0.46f, 0.31f, 0.47f);
             }
             prizeIsLegendary = premiumPrizeEarned;
+            prizeEligible = prizeEarned;
+            prizeRedeemed = false;
             redeemButton.gameObject.SetActive(false);
             nextGameButton.interactable = !prizeEarned;
         }
@@ -1254,6 +1258,8 @@ namespace CoupleRhythm
             state = GameState.Payment;
             roundId = Guid.NewGuid().ToString("N");
             paymentPending = false;
+            prizeEligible = false;
+            prizeRedeemed = false;
             if (paymentStatusText != null) paymentStatusText.text = string.Empty;
             adminOpen = false;
             paymentRoot.gameObject.SetActive(true);
@@ -1293,7 +1299,8 @@ namespace CoupleRhythm
 
         private void RedeemPrize()
         {
-            if (prizePending || !BoothStaffAuth.Instance.IsAdmin) return;
+            if (state != GameState.Results || !prizeEligible || prizeRedeemed || prizePending ||
+                BoothStaffAuth.Instance == null || !BoothStaffAuth.Instance.IsAdmin) return;
             prizePending = true;
             redeemButton.interactable = false;
             resultRewardText.text = "공유 재고 확인 중입니다. 상품을 아직 건네지 마세요.";
@@ -1302,6 +1309,7 @@ namespace CoupleRhythm
                 prizePending = false;
                 if (success)
                 {
+                    prizeRedeemed = true;
                     resultRewardText.text = "재고 차감 확정 · 운영진이 상품을 지급해 주세요.";
                     redeemButton.gameObject.SetActive(false);
                     nextGameButton.interactable = true;

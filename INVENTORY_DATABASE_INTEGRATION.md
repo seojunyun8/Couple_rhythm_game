@@ -10,6 +10,8 @@
 - 품절·통신 오류로 확정할 수 없으면 자동 지급을 보류하고 운영진이 회차 ID로 수기 대조합니다. 하위 상품 대체는 하지 않습니다.
 - 재고 수량과 기본 플레이/매출 카운터는 `GameState/stats`에 운영진이 실제 값으로 초기화합니다. 인형 100개를 코드가 임의로 생성하지 않습니다.
 - REST 요청은 Firebase 이메일 로그인으로 받은 ID 토큰을 사용합니다. 운영 `firestore.rules` 게시 후 익명 읽기 거부와 스태프 읽기 허용을 확인했습니다.
+- Windows 빌드 시 프로젝트 루트의 Git 제외 `.env`에서 Firebase 프로젝트 ID와 Web API Key를 읽어 실행 파일 옆 `.env`로 자동 배치합니다. 설정 누락·프로젝트 불일치 시 빌드를 중단합니다. `.exe`, `_Data` 폴더, 생성된 `.env`를 함께 배포하고 비밀번호는 넣지 않습니다.
+- 결과 화면에서 `Ctrl+Alt+P`는 실제 상품 당첨 회차에만 적용되며, 한 번 확정한 회차를 다시 눌러도 추가 차감하지 않습니다.
 
 로컬 JSON 모의 검사는 `dotnet run --project Tests/FirestoreRest/FirestoreRestChecks.csproj`로 실행합니다. 이 검사는 실제 Firebase 접속을 대신하지 않습니다.
 
