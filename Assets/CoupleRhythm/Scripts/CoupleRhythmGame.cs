@@ -112,6 +112,7 @@ namespace CoupleRhythm
         private string roundId;
         private bool paymentPending;
         private bool paymentRecorded;
+        private bool hasPaymentInventorySnapshot;
         private bool prizePending;
         private bool prizeIsLegendary;
         private bool prizeEligible;
@@ -152,6 +153,7 @@ namespace CoupleRhythm
         private const float WrongPressAccuracyWeight = 1f;
         private const float PrizeAccuracyThreshold = 90f;
         private const float PremiumPrizeAccuracyThreshold = 100f;
+        private const float PaymentInventoryRefreshInterval = 20f;
         private static readonly float[] LaneX = { -365f, 0f, 365f };
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
@@ -1283,6 +1285,7 @@ namespace CoupleRhythm
             roundId = Guid.NewGuid().ToString("N");
             paymentPending = false;
             paymentRecorded = false;
+            hasPaymentInventorySnapshot = false;
             prizeEligible = false;
             prizeRedeemed = false;
             if (paymentStatusText != null) paymentStatusText.text = string.Empty;
@@ -1292,7 +1295,7 @@ namespace CoupleRhythm
             gameRoot.gameObject.SetActive(false);
             resultRoot.gameObject.SetActive(false);
             adminRoot.gameObject.SetActive(false);
-            RefreshPaymentInventory();
+            StartCoroutine(RefreshPaymentInventoryLoop());
         }
 
         private void ReturnToPayment()
@@ -1310,7 +1313,16 @@ namespace CoupleRhythm
             gameRoot.gameObject.SetActive(false);
             resultRoot.gameObject.SetActive(false);
             adminRoot.gameObject.SetActive(false);
-            RefreshPaymentInventory();
+            StartCoroutine(RefreshPaymentInventoryLoop());
+        }
+
+        private IEnumerator RefreshPaymentInventoryLoop()
+        {
+            while (state == GameState.Payment)
+            {
+                RefreshPaymentInventory();
+                yield return new WaitForSecondsRealtime(PaymentInventoryRefreshInterval);
+            }
         }
 
         private void RefreshPaymentInventory()
@@ -1318,8 +1330,11 @@ namespace CoupleRhythm
             if (paymentInventoryText == null)
                 return;
 
-            paymentInventoryText.text = "재고 확인 중...";
-            paymentInventoryText.color = new Color(0.58f, 0.22f, 0.45f);
+            if (!hasPaymentInventorySnapshot)
+            {
+                paymentInventoryText.text = "재고 확인 중...";
+                paymentInventoryText.color = new Color(0.58f, 0.22f, 0.45f);
+            }
             RhythmFirebaseService.Instance.GetPrizeInventory((success, dolls, legendaryDolls, error) =>
             {
                 if (state != GameState.Payment || paymentInventoryText == null)
@@ -1327,14 +1342,20 @@ namespace CoupleRhythm
 
                 if (success)
                 {
+                    hasPaymentInventorySnapshot = true;
                     paymentInventoryText.text = "일반 " + dolls + "개  ·  레전드 " + legendaryDolls + "개";
                     paymentInventoryText.color = ink;
                 }
                 else
                 {
-                    paymentInventoryText.text = "재고 확인 필요";
-                    paymentInventoryText.color = new Color(0.83f, 0.23f, 0.35f);
-                    Debug.LogWarning("[RhythmFirebase] QR 화면 재고 조회 실패: " + error);
+                    if (!hasPaymentInventorySnapshot)
+                    {
+                        paymentInventoryText.text = error == "스태프 로그인이 필요합니다."
+                            ? "로그인 후 자동 확인"
+                            : "연결 대기 · 자동 재시도";
+                        paymentInventoryText.color = new Color(0.83f, 0.23f, 0.35f);
+                    }
+                    Debug.LogWarning("[RhythmFirebase] QR 화면 재고 조회 실패 · 20초 후 재시도: " + error);
                 }
             });
         }
