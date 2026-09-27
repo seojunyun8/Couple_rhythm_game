@@ -111,6 +111,7 @@ namespace CoupleRhythm
         private Button nextGameButton;
         private string roundId;
         private bool paymentPending;
+        private bool paymentRecorded;
         private bool prizePending;
         private bool prizeIsLegendary;
         private bool prizeEligible;
@@ -364,6 +365,9 @@ namespace CoupleRhythm
             RuntimeUI.AddShadow(confirm.targetGraphic, new Color(0.48f, 0.10f, 0.32f, 0.25f), new Vector2(0, -8));
             paymentStatusText = RuntimeUI.Text("Payment Status", paymentRoot, string.Empty, 20, Color.white);
             SetFixed(paymentStatusText.rectTransform, new Vector2(0.5f, 0f), new Vector2(0, 158), new Vector2(980, 58));
+
+            Button admin = RuntimeUI.Button("Admin", paymentRoot, "⚙  관리자 설정", new Color(0.50f, 0.19f, 0.48f, 0.93f), Color.white, 22, OpenAdmin);
+            SetFixed(admin.GetComponent<RectTransform>(), new Vector2(1f, 0f), new Vector2(-142, 54), new Vector2(230, 64));
         }
 
         private void BuildSongSelect(Transform parent)
@@ -397,6 +401,9 @@ namespace CoupleRhythm
             helpBg.color = new Color(1f, 1f, 1f, 0.78f);
             Text help = RuntimeUI.Text("Help", helpPanel, "1P  파란 버튼     ·     Together!  두 버튼 동시에     ·     2P  빨간 버튼\n긴 하트는 끝 박자까지 꾹 눌러주세요!", 23, ink);
             help.fontStyle = FontStyle.Bold;
+
+            Button back = RuntimeUI.Button("Back To Payment", selectionRoot, "←  입금 화면", new Color(0.50f, 0.19f, 0.48f, 0.93f), Color.white, 22, ReturnToPayment);
+            SetFixed(back.GetComponent<RectTransform>(), new Vector2(0f, 0f), new Vector2(142, 54), new Vector2(230, 64));
 
             Button admin = RuntimeUI.Button("Admin", selectionRoot, "⚙  관리자 설정", new Color(0.50f, 0.19f, 0.48f, 0.93f), Color.white, 22, OpenAdmin);
             SetFixed(admin.GetComponent<RectTransform>(), new Vector2(1f, 0f), new Vector2(-142, 54), new Vector2(230, 64));
@@ -1275,9 +1282,28 @@ namespace CoupleRhythm
             state = GameState.Payment;
             roundId = Guid.NewGuid().ToString("N");
             paymentPending = false;
+            paymentRecorded = false;
             prizeEligible = false;
             prizeRedeemed = false;
             if (paymentStatusText != null) paymentStatusText.text = string.Empty;
+            adminOpen = false;
+            paymentRoot.gameObject.SetActive(true);
+            selectionRoot.gameObject.SetActive(false);
+            gameRoot.gameObject.SetActive(false);
+            resultRoot.gameObject.SetActive(false);
+            adminRoot.gameObject.SetActive(false);
+            RefreshPaymentInventory();
+        }
+
+        private void ReturnToPayment()
+        {
+            StopAllCoroutines();
+            musicSource.Stop();
+            ClearNotes();
+            state = GameState.Payment;
+            paymentPending = false;
+            if (paymentStatusText != null)
+                paymentStatusText.text = paymentRecorded ? "입금 확인이 완료되었습니다. 같은 버튼을 누르면 곡 선택으로 돌아갑니다." : string.Empty;
             adminOpen = false;
             paymentRoot.gameObject.SetActive(true);
             selectionRoot.gameObject.SetActive(false);
@@ -1316,6 +1342,11 @@ namespace CoupleRhythm
         private void ConfirmPayment()
         {
             if (paymentPending) return;
+            if (paymentRecorded)
+            {
+                ShowSongSelect();
+                return;
+            }
             if (BoothStaffAuth.Instance == null || !BoothStaffAuth.Instance.IsAuthenticated)
             {
                 if (paymentStatusText != null)
@@ -1327,7 +1358,11 @@ namespace CoupleRhythm
             RhythmFirebaseService.Instance.RecordGameStart(roundId, 1000, (success, error) =>
             {
                 paymentPending = false;
-                if (success) ShowSongSelect();
+                if (success)
+                {
+                    paymentRecorded = true;
+                    ShowSongSelect();
+                }
                 else
                 {
                     if (paymentStatusText != null)
