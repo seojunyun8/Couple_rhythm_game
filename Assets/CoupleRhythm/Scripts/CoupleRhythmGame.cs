@@ -105,9 +105,9 @@ namespace CoupleRhythm
         private static readonly RhythmAccentMap[] RhythmAccentMaps =
         {
             new RhythmAccentMap(0, null),
-            new RhythmAccentMap(207, "rWuYnqC9lq2kfI+5v2kztZ+FkZF/WzeSkmRioCBoWcS6l5yfbYeRuLSVo5Z6vr7GymZiuLFaOMiXn5ynhx0A1NSMlqqou5/Jw6Kiq5h7abWqaImMemY4o4JtZnpkYx+ypoiLkIqHf7i2d3SgkpiUubS0t7MAAGN8bqGQAIF0fr3FX1lXogByg1GfrgCYYX+ltI6AN6cAfoJQqqEAdoiZ1NRYZACJAH+qqYiAU0B3ccnGX0rAfgBeZF6BoABsY4Kmp1Z/PosAVn5ljqYAcQBQqp9njwCBADxKPHOFAHAMZFZVlY8AeAxgQSpJIClIdRoAVkpnc2YAsL8AkpIAAP//AAAAAPDvAF6hAABIAADRmKB3AAD//6+97CT//8fH//+pqf//9O++zeQA//+7u///in5rAOHhuN//A/z/2tr//5GR5//u7q2s+0X//8W7WwCOn4iCZi9Vm8hU0dpycdXSoqG3xqWbXZ/fTMfZdW/PQqWWVjCzvIhoxlrPz34="),
+            new RhythmAccentMap(206, "7xq+AOxpwwDaN7UA32WmAOdVtADMY4EA5GSmONg2vADYdrQb6yXYmb9CvYbPNN2Nyxa/AOt9eQD0NMNG1mOwAOlGwwDJL64y9EiuGN5CpQDNe54A1ImRAORipBH8YZwA8D+fAOpupyvpTbwA6GLNot9lqYH/AkXqZSv4IlwA/wCg/1AA/ydN0l0x/QB3MP9FngGSX/8ARvZjIP8AZi7/ALLoQzf/Zlb0iAD/bool1wD/ANBD/wBex24b3yBhOf8AmexdMPYAXupmMv9NdluFlspo/xKJlnGedmCgiYhcnVqifsU2k2WGxFOLg2Wfh7pxfoGksJ83J+gfQv+BADL/GXI3IWb/W0fcOk/+mgCW/e4AHzcA/z2aedxVtjroAMs73nTHAPMjz3bGUMs+4zPjUs5Dl0H/bZ913QDVR/NszUzNO8tG5EKzfdw3tUnLR6QkwWyCQ+cyk4y9b51kzDPeHdA4uEXbR5GK1QCtSsZ3eFHXRqEA6XOdasI2wFW2"),
             new RhythmAccentMap(495, "SwDLAIygAEW54e5idUuvdy7MxgAAlACj+ACZAJMAe21RiWOYd79m2n6oqFyzkJNjqoEAtTGAhMfOsF5Hj52AXlyYvmxzZUVGmLSjAGaXe2FxVjwAnNkA//+f1qrqjd8AT6WQdr3izqV1uHawzt7Xbmq9xwCS0CKlurSypuF+g1pdjEHNyr20VoK4h/rk0LWZYLFrpzD2se3/p5az5vf/g4mxANv3r7MmOocy4PaavwB4JI49bLwApr6ao565k5JKK1wAvbelmBdTXDHR0YR4T493bQBi0wD2/1iwWrhkzwB5PDcAAP//E64A/moAhYQA////ADOLeJi/uaZxhKKisf+fSoTF/xxz3f//ZrKRp7ryxw=="),
-            new RhythmAccentMap(1357, "sv//zoC5OM7VrPG4b8Zu7O7/6bBf7kfz0eTmfMnKuWRc///l4eMA/9Pu+o18iX/DoqieWoaaKq5h671sNcWDYHvRzGq4fll8xKb/o6OkqI6H7dnC87kA0tru/4uutd+voPfkkZbLfaGm8vDl/22wf5Df/3FqqQDJmPLvdm5fSZaTz76o1KtYnKG/z76tnKNvkdHRyPXcMeD64sx1o6aGioP69L+MrWuUlu/r6v95w5/Fyv8AWrcAsEL4y0Jylnd7eefyVYC2ALW5y/nex5+aq7792r52xADN2tvlesGnooaH//+RibIA/M/u+djcgqVufNX/f1umAM29/+5tWHFWrYnk5XiRtwDJxM383Li2q6HN/7aUIbVwu87ov3zni657IfnumIejAPbF9/ji4KjHgqGa+VOPnD2ZWP/bsJN9AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
+            new RhythmAccentMap(1356, "WnH/B4PUo1vpANq4Rmn0AF56/05T5ahl2ADdm41AtVJaY/8Ae/+teP8A4plPQc91UW/pP42bboCuaaRtcGPlAHNf8kVr27cm6w/eWnNE4QBGcfoAdvagUtkAyJJyMv8ddnr/OFD4tWDYKc5vgSv7bGxW/y9Z9KE83DTGgzBbuEV4W+BGedWcIuJPxXRlRvcATVn0AHDoqD3yANuNawDGGGth/iWH/JxWsBTcaZcA/yybQPo2b719aIyvjGN8WeMgaEv/RlrunSfTCd6MejLgFYKN/11Hy6lN31K1cXhS/xRyYv9WTO+ZX9Yp25p9AP1QWlj/OGr3ox7fK8qDAF27H2tm/zxu76lB0Dzanmc8/x56cv9VKty5Y9o+s26FT8M5VWj/RWj0nkTjFcuaiCb2S3IA/wB8v5NXor2Fk7pcdxBPLSAPABMAAAAAAAAAAAAAAAAAAAAA")
         };
 
         private static CoupleRhythmGame instance;
@@ -294,12 +294,12 @@ namespace CoupleRhythm
         {
             return new[]
             {
-                // Positive delay values move the chart later to match the decoded
-                // AudioClip's measured sixteenth-note grid.
+                // Positive delay values move the chart later to align the playable
+                // note grid with percussion transients in Unity's decoded AudioClip.
                 new SongDefinition("redred", "REDRED", "CORTIS", "redred", 121f, 0.0125f, 40.0f, 62.0f, new Color(1f, 0.31f, 0.42f)),
-                new SongDefinition("its_me", "it's me", "ILLIT · 아일릿", "its_me", 147f, 0.0390f, 32.0f, 59.0f, new Color(0.50f, 0.57f, 1f)),
+                new SongDefinition("its_me", "it's me", "ILLIT · 아일릿", "its_me", 147f, 0.1050f, 32.0f, 59.0f, new Color(0.50f, 0.57f, 1f)),
                 new SongDefinition("lemonade", "LEMONADE", "aespa · 에스파", "lemonade", 128f, 0.0330f, 69.0f, 89.0f, new Color(1f, 0.72f, 0.20f)),
-                new SongDefinition("rude", "RUDE!", "Hearts2Hearts · 하츠투하츠", "rude", 128f, 0.0230f, 170.0f, 198.0f, new Color(0.78f, 0.37f, 0.96f))
+                new SongDefinition("rude", "RUDE!", "Hearts2Hearts · 하츠투하츠", "rude", 128f, 0.0930f, 170.0f, 198.0f, new Color(0.78f, 0.37f, 0.96f))
             };
         }
 
