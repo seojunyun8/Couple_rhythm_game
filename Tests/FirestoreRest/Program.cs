@@ -14,10 +14,13 @@ service.firebaseProjectId="test-project";
 var requests=new List<string>();
 var stats="{\"updateTime\":\"2026-01-01T00:00:00Z\",\"fields\":{\"totalDolls\":{\"integerValue\":\"1\"},\"totalLegendaryDolls\":{\"integerValue\":\"1\"},\"totalPlays\":{\"integerValue\":\"0\"},\"totalRevenue\":{\"integerValue\":\"0\"},\"totalSuccesses\":{\"integerValue\":\"0\"}}}";
 UnityWebRequest.Responder=req=>{ if(req.method=="GET"&&req.url.EndsWith("GameState/stats"))return(200,stats); if(req.method=="GET")return(404,""); var body=Encoding.UTF8.GetString(req.uploadHandler.bytes); JsonDocument.Parse(body); requests.Add(body); return(200,"{}"); };
-bool started=false,redeemed=false;
+bool started=false,redeemed=false,inventoryLoaded=false;
+int dolls=-1,legendaryDolls=-1;
+service.GetPrizeInventory((ok,currentDolls,currentLegendaryDolls,_)=>{inventoryLoaded=ok;dolls=currentDolls;legendaryDolls=currentLegendaryDolls;});
 service.RecordGameStart("round1",1000,(ok,_)=>started=ok);
 service.RedeemPrize("round1",false,(ok,_)=>redeemed=ok);
 service.SubmitScore("round1","song","A \"song\"",95,10,1,2,3,4);
+if(!inventoryLoaded||dolls!=1||legendaryDolls!=1)throw new Exception($"inventory: {inventoryLoaded} {dolls} {legendaryDolls}");
 if(!started||!redeemed||requests.Count!=3)throw new Exception($"flows: {started} {redeemed} {requests.Count}");
 foreach(var body in requests){using var doc=JsonDocument.Parse(body); if(doc.RootElement.GetProperty("writes").GetArrayLength()==0)throw new Exception("empty writes");}
-Console.WriteLine("Rhythm start/prize/leaderboard JSON: 3 valid commits");
+Console.WriteLine("Rhythm inventory read + start/prize/leaderboard JSON: valid");

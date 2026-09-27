@@ -106,6 +106,7 @@ namespace CoupleRhythm
         private Text resultStatsText;
         private Text resultRewardText;
         private Text paymentStatusText;
+        private Text paymentInventoryText;
         private Button redeemButton;
         private Button nextGameButton;
         private string roundId;
@@ -321,6 +322,22 @@ namespace CoupleRhythm
             SetFixed(title.rectTransform, new Vector2(0.5f, 1f), new Vector2(0, -101), new Vector2(1100, 66));
             title.fontStyle = FontStyle.Bold;
             RuntimeUI.AddOutline(title, new Color(0.63f, 0.18f, 0.41f, 0.72f), new Vector2(4, -4));
+
+            RectTransform inventoryPanel = RuntimeUI.FixedRect("Prize Inventory", paymentRoot, new Vector2(1f, 1f), new Vector2(-190, -88), new Vector2(340, 124));
+            Image inventoryBg = inventoryPanel.gameObject.AddComponent<Image>();
+            inventoryBg.sprite = RuntimeUI.RoundedSprite;
+            inventoryBg.type = Image.Type.Sliced;
+            inventoryBg.color = new Color(1f, 1f, 1f, 0.94f);
+            inventoryBg.raycastTarget = false;
+            RuntimeUI.AddShadow(inventoryBg, new Color(0.48f, 0.10f, 0.32f, 0.22f), new Vector2(0, -7));
+
+            Text inventoryTitle = RuntimeUI.Text("Inventory Title", inventoryPanel, "남은 인형 재고", 20, new Color(0.58f, 0.22f, 0.45f));
+            SetFixed(inventoryTitle.rectTransform, new Vector2(0.5f, 1f), new Vector2(0, -28), new Vector2(300, 32));
+            inventoryTitle.fontStyle = FontStyle.Bold;
+
+            paymentInventoryText = RuntimeUI.Text("Inventory Counts", inventoryPanel, "일반 --개  ·  레전드 --개", 23, ink);
+            SetFixed(paymentInventoryText.rectTransform, new Vector2(0.5f, 0f), new Vector2(0, 35), new Vector2(310, 42));
+            paymentInventoryText.fontStyle = FontStyle.Bold;
 
             RectTransform qrPanel = RuntimeUI.FixedRect("QR Panel", paymentRoot, new Vector2(0.5f, 0.5f), new Vector2(0, 2), new Vector2(620, 684));
             Image qrPanelBg = qrPanel.gameObject.AddComponent<Image>();
@@ -1267,6 +1284,33 @@ namespace CoupleRhythm
             gameRoot.gameObject.SetActive(false);
             resultRoot.gameObject.SetActive(false);
             adminRoot.gameObject.SetActive(false);
+            RefreshPaymentInventory();
+        }
+
+        private void RefreshPaymentInventory()
+        {
+            if (paymentInventoryText == null)
+                return;
+
+            paymentInventoryText.text = "재고 확인 중...";
+            paymentInventoryText.color = new Color(0.58f, 0.22f, 0.45f);
+            RhythmFirebaseService.Instance.GetPrizeInventory((success, dolls, legendaryDolls, error) =>
+            {
+                if (state != GameState.Payment || paymentInventoryText == null)
+                    return;
+
+                if (success)
+                {
+                    paymentInventoryText.text = "일반 " + dolls + "개  ·  레전드 " + legendaryDolls + "개";
+                    paymentInventoryText.color = ink;
+                }
+                else
+                {
+                    paymentInventoryText.text = "재고 확인 필요";
+                    paymentInventoryText.color = new Color(0.83f, 0.23f, 0.35f);
+                    Debug.LogWarning("[RhythmFirebase] QR 화면 재고 조회 실패: " + error);
+                }
+            });
         }
 
         private void ConfirmPayment()

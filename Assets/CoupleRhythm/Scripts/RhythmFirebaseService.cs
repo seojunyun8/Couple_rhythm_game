@@ -97,6 +97,47 @@ namespace CoupleRhythm
             StartCoroutine(ChangeStats(roundId, "prize", legendary ? "totalLegendaryDolls" : "totalDolls", 0, callback));
         }
 
+        /// <summary>
+        /// QR 결제 화면에 표시할 현재 일반/레전드 인형 재고를 조회합니다.
+        /// </summary>
+        public void GetPrizeInventory(Action<bool, int, int, string> callback)
+        {
+            StartCoroutine(GetPrizeInventoryRoutine(callback));
+        }
+
+        private IEnumerator GetPrizeInventoryRoutine(Action<bool, int, int, string> callback)
+        {
+            if (string.IsNullOrEmpty(firebaseProjectId) || firebaseProjectId == "your-firebase-project-id")
+            {
+                callback?.Invoke(false, 0, 0, "Firebase 설정을 확인해 주세요.");
+                yield break;
+            }
+
+            long code = 0;
+            string body = null;
+            yield return Send("GET", "/GameState/stats", null, (status, response) =>
+            {
+                code = status;
+                body = response;
+            });
+
+            StatsDocument doc;
+            try { doc = code == 200 ? JsonUtility.FromJson<StatsDocument>(body) : null; }
+            catch { doc = null; }
+
+            if (doc?.fields != null &&
+                Read(doc.fields.totalDolls, out int dolls) &&
+                Read(doc.fields.totalLegendaryDolls, out int legendaryDolls))
+            {
+                callback?.Invoke(true, dolls, legendaryDolls, null);
+                yield break;
+            }
+
+            string error = code == 401 ? "스태프 로그인이 필요합니다." :
+                code == 200 ? "재고 필드를 확인해 주세요." : "재고 조회 실패: " + code;
+            callback?.Invoke(false, 0, 0, error);
+        }
+
         private IEnumerator ChangeStats(string roundId, string kind, string stockField, int revenue, Action<bool, string> callback)
         {
             if (string.IsNullOrEmpty(roundId) || firebaseProjectId == "your-firebase-project-id")
