@@ -107,7 +107,9 @@ public sealed class BoothStaffAuth : MonoBehaviour
     private void BeginSignIn()
     {
         if (signingIn) return;
-        if (!IsConfigured) { status = "Firebase Web API 키와 프로젝트 설정을 확인해 주세요."; return; }
+        if (string.IsNullOrWhiteSpace(webApiKey))
+        { status = "Firebase Web API 키가 없습니다. 최신 빌드 설정을 확인해 주세요."; return; }
+        if (!IsConfigured) { status = "Firebase 프로젝트 ID를 읽지 못했습니다."; return; }
         if (string.IsNullOrWhiteSpace(email) || string.IsNullOrEmpty(password))
         { status = "이메일과 비밀번호를 입력해 주세요."; return; }
         string enteredPassword = password;
@@ -136,7 +138,8 @@ public sealed class BoothStaffAuth : MonoBehaviour
             if (request.responseCode != 200 || reply == null || !HasStaffClaim(reply.idToken))
             {
                 status = request.responseCode == 200 ? "이 계정에는 부스 스태프 권한이 없습니다." :
-                    "로그인하지 못했습니다. 계정과 연결을 확인해 주세요.";
+                    request.result == UnityWebRequest.Result.ConnectionError ? "네트워크 연결을 확인한 뒤 다시 로그인해 주세요." :
+                    "로그인하지 못했습니다. 계정과 Firebase 설정을 확인해 주세요. (HTTP " + request.responseCode + ")";
                 SignOut();
             }
             else

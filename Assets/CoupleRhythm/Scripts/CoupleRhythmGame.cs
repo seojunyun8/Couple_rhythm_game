@@ -1272,6 +1272,12 @@ namespace CoupleRhythm
         private void ConfirmPayment()
         {
             if (paymentPending) return;
+            if (BoothStaffAuth.Instance == null || !BoothStaffAuth.Instance.IsAuthenticated)
+            {
+                if (paymentStatusText != null)
+                    paymentStatusText.text = "스태프가 Firebase에 로그인한 뒤 다시 눌러 주세요.";
+                return;
+            }
             paymentPending = true;
             if (paymentStatusText != null) paymentStatusText.text = "부스 기록 확인 중... 다시 누르지 마세요.";
             RhythmFirebaseService.Instance.RecordGameStart(roundId, 1000, (success, error) =>
