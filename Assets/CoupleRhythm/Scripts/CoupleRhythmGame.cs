@@ -191,9 +191,6 @@ namespace CoupleRhythm
         {
             Keyboard keyboard = Keyboard.current;
             if (state == GameState.Results && keyboard != null &&
-                keyboard.leftCtrlKey.isPressed && keyboard.leftAltKey.isPressed && keyboard.pKey.wasPressedThisFrame)
-                RedeemPrize();
-            if (state == GameState.Results && keyboard != null &&
                 keyboard.leftCtrlKey.isPressed && keyboard.leftAltKey.isPressed && keyboard.sKey.wasPressedThisFrame &&
                 BoothStaffAuth.Instance.IsAdmin)
                 SaveCurrentScore();
@@ -573,7 +570,7 @@ namespace CoupleRhythm
             SetFixed(resultRewardText.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0, -187), new Vector2(670, 90));
             resultRewardText.fontStyle = FontStyle.Bold;
 
-            redeemButton = RuntimeUI.Button("Redeem Prize", panel, "스태프 · 재고 확인 후 지급 확정", new Color(0.23f, 0.54f, 0.49f), Color.white, 22, RedeemPrize);
+            redeemButton = RuntimeUI.Button("Redeem Prize", panel, "재고 차감 다시 시도", new Color(0.23f, 0.54f, 0.49f), Color.white, 22, RedeemPrize);
             SetFixed(redeemButton.GetComponent<RectTransform>(), new Vector2(0.5f, 0f), new Vector2(0, 153), new Vector2(480, 65));
             nextGameButton = RuntimeUI.Button("Next Game", panel, "다음 게임하기  ♥", new Color(0.93f, 0.28f, 0.58f), Color.white, 26, ShowPayment);
             SetFixed(nextGameButton.GetComponent<RectTransform>(), new Vector2(0.5f, 0f), new Vector2(0, 72), new Vector2(420, 76));
@@ -1132,13 +1129,13 @@ namespace CoupleRhythm
             SaveCurrentScore();
             if (premiumPrizeEarned)
             {
-                resultRewardText.text = "♥ 100% 달성 · 레전드 인형 대상 ♥\n운영진이 Ctrl+Alt+P로 재고를 확정한 후 지급합니다.";
+                resultRewardText.text = "♥ 100% 달성 · 레전드 인형 대상 ♥";
                 resultRewardText.color = new Color(0.93f, 0.45f, 0.08f);
                 StartCoroutine(CelebrationRoutine());
             }
             else if (prizeEarned)
             {
-                resultRewardText.text = "♥ 일반 인형 대상 ♥\n운영진이 Ctrl+Alt+P로 재고를 확정한 후 지급합니다.";
+                resultRewardText.text = "♥ 일반 인형 대상 ♥";
                 resultRewardText.color = new Color(0.89f, 0.22f, 0.52f);
             }
             else
@@ -1149,8 +1146,11 @@ namespace CoupleRhythm
             prizeIsLegendary = premiumPrizeEarned;
             prizeEligible = prizeEarned;
             prizeRedeemed = false;
+            redeemButton.interactable = true;
             redeemButton.gameObject.SetActive(false);
             nextGameButton.interactable = !prizeEarned;
+            if (prizeEarned)
+                RedeemPrize();
         }
 
         private IEnumerator CelebrationRoutine()
@@ -1405,24 +1405,33 @@ namespace CoupleRhythm
 
         private void RedeemPrize()
         {
-            if (state != GameState.Results || !prizeEligible || prizeRedeemed || prizePending ||
-                BoothStaffAuth.Instance == null || !BoothStaffAuth.Instance.IsAdmin) return;
+            if (state != GameState.Results || !prizeEligible || prizeRedeemed || prizePending)
+                return;
+            if (BoothStaffAuth.Instance == null || !BoothStaffAuth.Instance.IsAuthenticated)
+            {
+                resultRewardText.text = "자동 재고 차감 대기 · 스태프 로그인 후 다시 시도해 주세요.";
+                redeemButton.gameObject.SetActive(true);
+                redeemButton.interactable = true;
+                nextGameButton.interactable = true;
+                return;
+            }
             prizePending = true;
             redeemButton.interactable = false;
-            resultRewardText.text = "공유 재고 확인 중입니다. 상품을 아직 건네지 마세요.";
+            resultRewardText.text = (prizeIsLegendary ? "레전드" : "일반") + " 인형 재고를 자동 차감 중입니다. 상품을 아직 건네지 마세요.";
             RhythmFirebaseService.Instance.RedeemPrize(roundId, prizeIsLegendary, (success, error) =>
             {
                 prizePending = false;
                 if (success)
                 {
                     prizeRedeemed = true;
-                    resultRewardText.text = "재고 차감 확정 · 운영진이 상품을 지급해 주세요.";
+                    resultRewardText.text = (prizeIsLegendary ? "레전드" : "일반") + " 인형 재고 차감 완료 · 상품을 지급해 주세요.";
                     redeemButton.gameObject.SetActive(false);
                     nextGameButton.interactable = true;
                 }
                 else
                 {
-                    resultRewardText.text = "지급 보류 · 운영진 수기 대응 필요\n" + error + "\n기록 번호: " + roundId;
+                    resultRewardText.text = "자동 재고 차감 실패 · 상품 지급 보류\n" + error + "\n기록 번호: " + roundId;
+                    redeemButton.gameObject.SetActive(true);
                     redeemButton.interactable = true;
                     nextGameButton.interactable = true;
                 }

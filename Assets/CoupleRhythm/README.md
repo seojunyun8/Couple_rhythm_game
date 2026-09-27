@@ -6,7 +6,7 @@ This folder contains the runtime-built two-player rhythm game.
 
 - On launch, the KakaoPay QR is shown. The operator presses `입금 완료 · 노래 고르기` after confirming payment to open song selection.
 - The confirmation button is a manual confirmation step; it does not query KakaoPay or a bank server.
-- When a round ends, the final accuracy and judgement stats are shown. The operator presses `다음 게임하기` to return to the QR payment screen.
+- When a round ends, the final accuracy and judgement stats are shown. Prize inventory is deducted automatically for qualifying scores; a retry button appears only if that update fails. The operator presses `다음 게임하기` to return to the QR payment screen.
 - `1P`: blue button
 - `2P`: red button
 - `Together!`: press the blue and red buttons together
