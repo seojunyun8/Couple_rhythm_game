@@ -40,6 +40,8 @@ public sealed class BoothStaffAuth : MonoBehaviour
         public string refreshToken;
         public string expiresIn;
     }
+    [Serializable] private sealed class AuthErrorReply { public AuthError error; }
+    [Serializable] private sealed class AuthError { public string message; }
     [Serializable] private sealed class RefreshReply
     {
         public string id_token;
@@ -92,8 +94,8 @@ public sealed class BoothStaffAuth : MonoBehaviour
 
         float width = Mathf.Min(450f, Screen.width - 20f);
         float left = (Screen.width - width) * 0.5f;
-        float top = (Screen.height - 225f) * 0.5f;
-        GUI.Box(new Rect(left, top, width, 225f), "스태프 로그인");
+        float top = (Screen.height - 255f) * 0.5f;
+        GUI.Box(new Rect(left, top, width, 255f), "스태프 로그인");
         GUI.Label(new Rect(left + 20f, top + 35f, width - 40f, 25f), "운영 전에 Firebase 스태프 계정으로 로그인해 주세요.");
         email = GUI.TextField(new Rect(left + 20f, top + 70f, width - 40f, 27f), email);
         password = GUI.PasswordField(new Rect(left + 20f, top + 103f, width - 40f, 27f), password, '*');
@@ -101,7 +103,7 @@ public sealed class BoothStaffAuth : MonoBehaviour
         if (GUI.Button(new Rect(left + 20f, top + 139f, width - 40f, 30f), signingIn ? "로그인 중..." : "로그인"))
             BeginSignIn();
         GUI.enabled = true;
-        GUI.Label(new Rect(left + 20f, top + 177f, width - 40f, 42f), status);
+        GUI.Label(new Rect(left + 20f, top + 177f, width - 40f, 67f), status);
     }
 
     private void BeginSignIn()
@@ -134,12 +136,17 @@ public sealed class BoothStaffAuth : MonoBehaviour
             request.downloadHandler = new DownloadHandlerBuffer();
             request.SetRequestHeader("Content-Type", "application/json");
             yield return request.SendWebRequest();
-            SignInReply reply = Parse<SignInReply>(request.downloadHandler.text);
+            string response = request.downloadHandler.text;
+            SignInReply reply = request.responseCode == 200 ? Parse<SignInReply>(response) : null;
             if (request.responseCode != 200 || reply == null || !HasStaffClaim(reply.idToken))
             {
-                status = request.responseCode == 200 ? "이 계정에는 부스 스태프 권한이 없습니다." :
-                    request.result == UnityWebRequest.Result.ConnectionError ? "네트워크 연결을 확인한 뒤 다시 로그인해 주세요." :
-                    "로그인하지 못했습니다. 계정과 Firebase 설정을 확인해 주세요. (HTTP " + request.responseCode + ")";
+                status = request.result == UnityWebRequest.Result.ConnectionError ?
+                    "네트워크 연결을 확인한 뒤 다시 로그인해 주세요." :
+                    request.responseCode == 200 ?
+                        reply == null || string.IsNullOrEmpty(reply.idToken) ?
+                            "Firebase 로그인 응답이 올바르지 않습니다." :
+                            "이 계정에는 부스 스태프 권한이 없습니다. 다시 로그인해 주세요." :
+                        SignInError(request.responseCode, response);
                 SignOut();
             }
             else
@@ -235,5 +242,48 @@ public sealed class BoothStaffAuth : MonoBehaviour
     {
         try { return string.IsNullOrEmpty(json) ? null : JsonUtility.FromJson<T>(json); }
         catch (Exception) { return null; }
+    }
+
+    // Firebase Auth REST errors carry the useful cause in error.message.
+    // Never display or log the full response, request body, API key, or password.
+    private static string SignInError(long httpCode, string response)
+    {
+        string code = Parse<AuthErrorReply>(response)?.error?.message ?? "";
+        int separator = code.IndexOf(':');
+        if (separator >= 0) code = code.Substring(0, separator);
+        code = code.Trim();
+        switch (code)
+        {
+            case "INVALID_LOGIN_CREDENTIALS":
+            case "INVALID_CREDENTIAL":
+            case "INVALID_PASSWORD":
+            case "EMAIL_NOT_FOUND":
+                return "이메일 또는 비밀번호가 맞지 않습니다. 스태프 계정을 확인해 주세요.";
+            case "INVALID_EMAIL":
+                return "이메일 주소 형식을 확인해 주세요.";
+            case "USER_DISABLED":
+                return "사용 중지된 계정입니다. Firebase Authentication 사용자를 확인해 주세요.";
+            case "OPERATION_NOT_ALLOWED":
+            case "PASSWORD_LOGIN_DISABLED":
+                return "Firebase 이메일/비밀번호 로그인 제공자가 꺼져 있습니다.";
+            case "API_KEY_INVALID":
+            case "INVALID_API_KEY":
+            case "API_KEY_SERVICE_BLOCKED":
+            case "PROJECT_NOT_FOUND":
+                return "Firebase Web API 키 또는 프로젝트 설정을 확인해 주세요. (" + code + ")";
+            case "TOO_MANY_ATTEMPTS_TRY_LATER":
+                return "로그인 시도가 너무 많습니다. 잠시 후 다시 시도해 주세요.";
+        }
+        if (code.StartsWith("API key not valid", StringComparison.OrdinalIgnoreCase))
+            return "Firebase Web API 키를 확인해 주세요.";
+        // Show only a short machine-readable error code, not arbitrary server text.
+        if (code.Length > 0 && code.Length <= 64)
+        {
+            bool safe = true;
+            foreach (char c in code)
+                if (!(c >= 'A' && c <= 'Z') && !(c >= '0' && c <= '9') && c != '_') { safe = false; break; }
+            if (safe) return "Firebase 로그인 오류: " + code + " (HTTP " + httpCode + ")";
+        }
+        return "Firebase 로그인에 실패했습니다. (HTTP " + httpCode + ")";
     }
 }
