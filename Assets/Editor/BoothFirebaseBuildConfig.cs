@@ -9,12 +9,12 @@ using UnityEngine;
 
 /// <summary>
 /// Windows 빌드 실행 파일 옆에 런타임 .env를 자동 생성한다.
-/// 저장소에 없는 프로젝트 루트 .env 또는 빌드 프로세스 환경변수만 사용한다.
+/// 프로젝트 루트 .env 또는 빌드 환경변수가 없으면 Resources 설정을 사용한다.
 /// </summary>
 public sealed class BoothFirebaseBuildConfig : IPreprocessBuildWithReport, IPostprocessBuildWithReport
 {
     [Serializable]
-    private sealed class ProjectConfig { public string firebaseProjectId; }
+    private sealed class ProjectConfig { public string firebaseProjectId, firebaseWebApiKey; }
 
     public int callbackOrder => 0;
 
@@ -70,9 +70,11 @@ public sealed class BoothFirebaseBuildConfig : IPreprocessBuildWithReport, IPost
         }
 
         string projectId = Get(values, "FIREBASE_PROJECT_ID");
+        if (string.IsNullOrWhiteSpace(projectId)) projectId = config.firebaseProjectId.Trim();
         string apiKey = Get(values, "FIREBASE_WEB_API_KEY");
+        if (string.IsNullOrWhiteSpace(apiKey)) apiKey = (config.firebaseWebApiKey ?? "").Trim();
         if (string.IsNullOrWhiteSpace(projectId) || string.IsNullOrWhiteSpace(apiKey))
-            throw new BuildFailedException("FIREBASE_PROJECT_ID와 FIREBASE_WEB_API_KEY를 프로젝트 루트 .env 또는 빌드 환경변수에 설정하세요.");
+            throw new BuildFailedException("FirebaseConfig.json 또는 프로젝트 루트 .env에 Firebase 프로젝트 ID와 Web API 키를 설정하세요.");
         if (projectId != config.firebaseProjectId.Trim())
             throw new BuildFailedException(".env의 Firebase 프로젝트 ID가 FirebaseConfig.json과 다릅니다.");
 
