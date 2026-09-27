@@ -55,6 +55,30 @@ namespace CoupleRhythm
             }
         }
 
+        private readonly struct RhythmAccentMap
+        {
+            public readonly int StartSubdivision;
+            public readonly byte[] Strengths;
+
+            public RhythmAccentMap(int startSubdivision, string encodedStrengths)
+            {
+                StartSubdivision = startSubdivision;
+                Strengths = string.IsNullOrEmpty(encodedStrengths) ? null : Convert.FromBase64String(encodedStrengths);
+            }
+
+            public bool TryGetStrength(int absoluteSubdivision, out float strength)
+            {
+                int index = absoluteSubdivision - StartSubdivision;
+                if (Strengths == null || index < 0 || index >= Strengths.Length)
+                {
+                    strength = 0f;
+                    return false;
+                }
+                strength = Strengths[index] / 255f;
+                return true;
+            }
+        }
+
 
         // Four-beat rhythm shapes are randomly recombined each round. Their offsets stay
         // on the beat grid, so the chart varies without drifting away from the song BPM.
@@ -72,6 +96,18 @@ namespace CoupleRhythm
             new RhythmTemplate(new[] { 0f, 0.25f, 0.5f, 0.75f, 1.25f, 1.5f, 2f, 2.25f, 2.5f, 3f, 3.5f }, 0, 4, 4),
             new RhythmTemplate(new[] { 0f, 0.5f, 1f, 1.25f, 1.5f, 1.75f, 2.5f, 3f, 3.25f, 3.5f, 3.75f }, 2, 4, 4),
             new RhythmTemplate(new[] { 0f, 0.25f, 0.5f, 0.75f, 1f, 1.5f, 2f, 2.5f, 2.75f, 3f, 3.25f, 3.5f }, 0, 4, 4)
+        };
+
+        // The bundled masters do not all have REDRED's steady four-on-the-grid pulse.
+        // These compact maps were measured from Unity's decoded audio at sixteenth-note
+        // positions. They let the random chart system prefer patterns that land on each
+        // song's real transients while preserving random lanes, holds, and duet notes.
+        private static readonly RhythmAccentMap[] RhythmAccentMaps =
+        {
+            new RhythmAccentMap(0, null),
+            new RhythmAccentMap(207, "rWuYnqC9lq2kfI+5v2kztZ+FkZF/WzeSkmRioCBoWcS6l5yfbYeRuLSVo5Z6vr7GymZiuLFaOMiXn5ynhx0A1NSMlqqou5/Jw6Kiq5h7abWqaImMemY4o4JtZnpkYx+ypoiLkIqHf7i2d3SgkpiUubS0t7MAAGN8bqGQAIF0fr3FX1lXogByg1GfrgCYYX+ltI6AN6cAfoJQqqEAdoiZ1NRYZACJAH+qqYiAU0B3ccnGX0rAfgBeZF6BoABsY4Kmp1Z/PosAVn5ljqYAcQBQqp9njwCBADxKPHOFAHAMZFZVlY8AeAxgQSpJIClIdRoAVkpnc2YAsL8AkpIAAP//AAAAAPDvAF6hAABIAADRmKB3AAD//6+97CT//8fH//+pqf//9O++zeQA//+7u///in5rAOHhuN//A/z/2tr//5GR5//u7q2s+0X//8W7WwCOn4iCZi9Vm8hU0dpycdXSoqG3xqWbXZ/fTMfZdW/PQqWWVjCzvIhoxlrPz34="),
+            new RhythmAccentMap(495, "SwDLAIygAEW54e5idUuvdy7MxgAAlACj+ACZAJMAe21RiWOYd79m2n6oqFyzkJNjqoEAtTGAhMfOsF5Hj52AXlyYvmxzZUVGmLSjAGaXe2FxVjwAnNkA//+f1qrqjd8AT6WQdr3izqV1uHawzt7Xbmq9xwCS0CKlurSypuF+g1pdjEHNyr20VoK4h/rk0LWZYLFrpzD2se3/p5az5vf/g4mxANv3r7MmOocy4PaavwB4JI49bLwApr6ao565k5JKK1wAvbelmBdTXDHR0YR4T493bQBi0wD2/1iwWrhkzwB5PDcAAP//E64A/moAhYQA////ADOLeJi/uaZxhKKisf+fSoTF/xxz3f//ZrKRp7ryxw=="),
+            new RhythmAccentMap(1357, "sv//zoC5OM7VrPG4b8Zu7O7/6bBf7kfz0eTmfMnKuWRc///l4eMA/9Pu+o18iX/DoqieWoaaKq5h671sNcWDYHvRzGq4fll8xKb/o6OkqI6H7dnC87kA0tru/4uutd+voPfkkZbLfaGm8vDl/22wf5Df/3FqqQDJmPLvdm5fSZaTz76o1KtYnKG/z76tnKNvkdHRyPXcMeD64sx1o6aGioP69L+MrWuUlu/r6v95w5/Fyv8AWrcAsEL4y0Jylnd7eefyVYC2ALW5y/nex5+aq7792r52xADN2tvlesGnooaH//+RibIA/M/u+djcgqVufNX/f1umAM29/+5tWHFWrYnk5XiRtwDJxM383Li2q6HN/7aUIbVwu87ov3zni657IfnumIejAPbF9/ji4KjHgqGa+VOPnD2ZWP/bsJN9AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
         };
 
         private static CoupleRhythmGame instance;
@@ -755,8 +791,9 @@ namespace CoupleRhythm
         private void BeginPlayback()
         {
             float secondsPerBeat = 60f / Mathf.Max(1f, currentSongBpm);
-            float firstAbsoluteBeat = Mathf.Ceil((clipPlaybackStart + TravelTime) / secondsPerBeat) * secondsPerBeat;
-            BuildRhythmChart(firstAbsoluteBeat - clipPlaybackStart);
+            int firstAbsoluteBeatIndex = Mathf.CeilToInt((clipPlaybackStart + TravelTime) / secondsPerBeat);
+            float firstAbsoluteBeat = firstAbsoluteBeatIndex * secondsPerBeat;
+            BuildRhythmChart(firstAbsoluteBeat - clipPlaybackStart, firstAbsoluteBeatIndex);
             nextNoteIndex = 0;
             musicSource.volume = 0f;
             musicSource.time = clipPlaybackStart;
@@ -779,7 +816,7 @@ namespace CoupleRhythm
             }
         }
 
-        private void BuildRhythmChart(float firstTargetTime)
+        private void BuildRhythmChart(float firstTargetTime, int firstAbsoluteBeatIndex)
         {
             chartNotes.Clear();
             maximumAccuracyWeight = 0f;
@@ -805,7 +842,8 @@ namespace CoupleRhythm
                     break;
 
                 bool forceBurst = measuresSinceBurst >= 2;
-                int templateIndex = ChooseRhythmTemplate(random, previousTemplate, density, forceBurst);
+                int measureStartSubdivision = (firstAbsoluteBeatIndex + measure * 4) * 4;
+                int templateIndex = ChooseRhythmTemplate(random, previousTemplate, density, forceBurst, measureStartSubdivision);
                 RhythmTemplate template = RhythmTemplates[templateIndex];
                 previousTemplate = templateIndex;
                 measuresSinceBurst = template.BurstLength >= 3 ? 0 : measuresSinceBurst + 1;
@@ -909,7 +947,57 @@ namespace CoupleRhythm
             }
         }
 
-        private static int ChooseRhythmTemplate(System.Random random, int previousTemplate, int density, bool forceBurst)
+        private int ChooseRhythmTemplate(System.Random random, int previousTemplate, int density, bool forceBurst, int measureStartSubdivision)
+        {
+            if (selectedSongIndex > 0 && selectedSongIndex < RhythmAccentMaps.Length &&
+                Mathf.Abs(currentSongBpm - songs[selectedSongIndex].defaultBpm) < 0.1f)
+            {
+                RhythmAccentMap accentMap = RhythmAccentMaps[selectedSongIndex];
+                int minimumTemplateDensity = density >= 4 ? 3 : density == 3 ? 2 : 1;
+                int targetNoteCount = density >= 4 ? 11 : density >= 2 ? 7 : 5;
+                int bestIndex = -1;
+                float bestScore = float.NegativeInfinity;
+
+                for (int index = 0; index < RhythmTemplates.Length; index++)
+                {
+                    RhythmTemplate candidate = RhythmTemplates[index];
+                    if (index == previousTemplate || candidate.MinimumDensity > density ||
+                        candidate.MinimumDensity < minimumTemplateDensity || (forceBurst && candidate.BurstLength < 3))
+                        continue;
+
+                    float accentTotal = 0f;
+                    bool hasMeasuredAccent = true;
+                    for (int noteIndex = 0; noteIndex < candidate.BeatOffsets.Length; noteIndex++)
+                    {
+                        int subdivision = measureStartSubdivision + Mathf.RoundToInt(candidate.BeatOffsets[noteIndex] * 4f);
+                        if (!accentMap.TryGetStrength(subdivision, out float strength))
+                        {
+                            hasMeasuredAccent = false;
+                            break;
+                        }
+                        accentTotal += strength;
+                    }
+                    if (!hasMeasuredAccent)
+                        continue;
+
+                    float averageAccent = accentTotal / candidate.BeatOffsets.Length;
+                    float noteCountPenalty = Mathf.Abs(candidate.BeatOffsets.Length - targetNoteCount) * 0.08f;
+                    float score = averageAccent - noteCountPenalty + (float)random.NextDouble() * 0.015f;
+                    if (score > bestScore)
+                    {
+                        bestScore = score;
+                        bestIndex = index;
+                    }
+                }
+
+                if (bestIndex >= 0)
+                    return bestIndex;
+            }
+
+            return ChooseRandomRhythmTemplate(random, previousTemplate, density, forceBurst);
+        }
+
+        private static int ChooseRandomRhythmTemplate(System.Random random, int previousTemplate, int density, bool forceBurst)
         {
             int minimumTemplateDensity = density >= 4 ? 3 : density == 3 ? 2 : 1;
             for (int attempt = 0; attempt < 32; attempt++)
