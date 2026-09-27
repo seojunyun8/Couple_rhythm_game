@@ -79,21 +79,6 @@ namespace CoupleRhythm
             }
         }
 
-        private readonly struct AuthoredRhythmEvent
-        {
-            public readonly ushort MillisecondsFromAnchor;
-            public readonly byte MinimumDensity;
-            public readonly byte Strength;
-
-            public AuthoredRhythmEvent(ushort millisecondsFromAnchor, byte minimumDensity, byte strength)
-            {
-                MillisecondsFromAnchor = millisecondsFromAnchor;
-                MinimumDensity = minimumDensity;
-                Strength = strength;
-            }
-        }
-
-
         // Four-beat rhythm shapes are randomly recombined each round. Their offsets stay
         // on the beat grid, so the chart varies without drifting away from the song BPM.
         private static readonly RhythmTemplate[] RhythmTemplates =
@@ -112,24 +97,17 @@ namespace CoupleRhythm
             new RhythmTemplate(new[] { 0f, 0.25f, 0.5f, 0.75f, 1f, 1.5f, 2f, 2.5f, 2.75f, 3f, 3.25f, 3.5f }, 0, 4, 4)
         };
 
+        // The bundled masters do not all have REDRED's steady four-on-the-grid pulse.
         // These compact maps were measured from Unity's decoded audio at sixteenth-note
-        // positions. The random chart system uses them for the non-authored tracks to
-        // prefer patterns that land on real transients while keeping varied note types.
+        // positions. They let the random chart system prefer patterns that land on each
+        // song's real transients while preserving random lanes, holds, and duet notes.
         private static readonly RhythmAccentMap[] RhythmAccentMaps =
         {
             new RhythmAccentMap(0, null),
-            new RhythmAccentMap(206, "7xq+AOxpwwDaN7UA32WmAOdVtADMY4EA5GSmONg2vADYdrQb6yXYmb9CvYbPNN2Nyxa/AOt9eQD0NMNG1mOwAOlGwwDJL64y9EiuGN5CpQDNe54A1ImRAORipBH8YZwA8D+fAOpupyvpTbwA6GLNot9lqYH/AkXqZSv4IlwA/wCg/1AA/ydN0l0x/QB3MP9FngGSX/8ARvZjIP8AZi7/ALLoQzf/Zlb0iAD/bool1wD/ANBD/wBex24b3yBhOf8AmexdMPYAXupmMv9NdluFlspo/xKJlnGedmCgiYhcnVqifsU2k2WGxFOLg2Wfh7pxfoGksJ83J+gfQv+BADL/GXI3IWb/W0fcOk/+mgCW/e4AHzcA/z2aedxVtjroAMs73nTHAPMjz3bGUMs+4zPjUs5Dl0H/bZ913QDVR/NszUzNO8tG5EKzfdw3tUnLR6QkwWyCQ+cyk4y9b51kzDPeHdA4uEXbR5GK1QCtSsZ3eFHXRqEA6XOdasI2wFW2"),
+            new RhythmAccentMap(206, "vR2TBcMxgBKtSZoxpidmJqg4nBSnSH4zoi2qEbYAnADBAMU/tRG5lqsZwZi2J9yevDGeFZF3kB6SAIQEqx99CcEHvxu+Bp08ykrQOe1UeQCnOoMdpxJKEsILlRCqU3gNyRC+DbEQmBuvALoOthLQasMAnhS6QECtdwj/YxcA/1Ow9WQS5wgy41wm/SsyFP9CrQB0VOAdU6+dN9dWTS//Pan/TRTaDVrHtiT/FSE/lg6aKpMf3GkcyXgy1x4fAOYmqPEeGKgpGrBrGtwnSIeBdJhjyDJdLk9sHTKaWyJBNg1IeGIyJRU4KAMNUAgGDkUwAQ8KD5AZI9gwDf95UQT8NUgjLgDvPitpIwJQNAAAKTcSVTQA/ziGB9EG+y3tCsET2SnfWPYAuF3DINwj5iPhJdErcRf3CZRCwSPNKe5CpRjDPOVx9AyPN7MjrQB/JVoApC1kNowri2WxC6YCsT3RVMoPrUDjJH5huxacccIlNSjKJncA3UNyU8g4w0TZ"),
             new RhythmAccentMap(495, "SwDLAIygAEW54e5idUuvdy7MxgAAlACj+ACZAJMAe21RiWOYd79m2n6oqFyzkJNjqoEAtTGAhMfOsF5Hj52AXlyYvmxzZUVGmLSjAGaXe2FxVjwAnNkA//+f1qrqjd8AT6WQdr3izqV1uHawzt7Xbmq9xwCS0CKlurSypuF+g1pdjEHNyr20VoK4h/rk0LWZYLFrpzD2se3/p5az5vf/g4mxANv3r7MmOocy4PaavwB4JI49bLwApr6ao565k5JKK1wAvbelmBdTXDHR0YR4T493bQBi0wD2/1iwWrhkzwB5PDcAAP//E64A/moAhYQA////ADOLeJi/uaZxhKKisf+fSoTF/xxz3f//ZrKRp7ryxw=="),
             new RhythmAccentMap(1356, "WnH/B4PUo1vpANq4Rmn0AF56/05T5ahl2ADdm41AtVJaY/8Ae/+teP8A4plPQc91UW/pP42bboCuaaRtcGPlAHNf8kVr27cm6w/eWnNE4QBGcfoAdvagUtkAyJJyMv8ddnr/OFD4tWDYKc5vgSv7bGxW/y9Z9KE83DTGgzBbuEV4W+BGedWcIuJPxXRlRvcATVn0AHDoqD3yANuNawDGGGth/iWH/JxWsBTcaZcA/yybQPo2b719aIyvjGN8WeMgaEv/RlrunSfTCd6MejLgFYKN/11Hy6lN31K1cXhS/xRyYv9WTO+ZX9Yp25p9AP1QWlj/OGr3ox7fK8qDAF27H2tm/zxu76lB0Dzanmc8/x56cv9VKty5Y9o+s26FT8M5VWj/RWj0nkTjFcuaiCb2S3IA/wB8v5NXor2Fk7pcdxBPLSAPABMAAAAAAAAAAAAAAAAAAAAA")
         };
-
-        // it's me changes groove and transient phase across the playable section,
-        // so a single BPM grid cannot stay locked to the master. These timestamps
-        // were measured from the decoded AudioClip's kick/snare attacks. Each event
-        // stays on the measured attack; density only adds notes without moving them.
-        private const float ItsMeChartAnchorSeconds = 24f;
-        private static readonly AuthoredRhythmEvent[] ItsMeAuthoredChart = DecodeAuthoredRhythmEvents(
-            "swEBdYQCAWVPAwFmIAQDXOYEA1SxBQJdggYCXE0HAYEYCAFu4wgBOq4JAjd/CgIoSwsBWxYMAyPhDAFTrA0DHXcOAWtIDwJhDhACXt8QAzmqEQFqexIBaUATAb8RFAMS3BQCNacVAxZzFgE5SRcDGwkYAWHaGAI2nxkBYXAaATw7GwFqBxwBZdIcAlSjHQMsaB4BaDkfA0r+HwJe1SABb5UhAl1mIgI3NyMBt/wjBBdqJAHJzSQDI5glAdKBJgMYLycB+vonA1RiKAGPyygEAJYpAf/KKgJnLCsEBPgrAdtULAMJAy0DC44tAd5fLgJfMC8CTfUvAf/AMAQAKTEBa4wxAy1iMgG01jIEAEUzAxztMwH/uDQDQyc1AfiDNQQFWjYB07c2BACCNwGL6zcDVLw4AfdwOQIYWDoCdyM7AlrjOwIzuTwBtkU9BADtPQGCVj4DGxs/AWEJQAMEsUABjYJBA0jlQQGrZUIEAR5DAbxMRAFptUQDGnpFAYxdRgIBtEYDHChHAiPhRwFKskgBgHJJAg9PSgQEvUoDFiBLAR/lSwFkU0wEAMJMAwqHTQIZTE4BPuNPAUm0UAQaHFEBTIVRAzrtUQMeW1ICIidTAS2bUwMr/VMCG2ZUAxnOVAItN1UEEp9VATo8VgIvcFcBi55YAeMGWQM7qVkEADRaAcnRWgIAc1sCABxcBACbXAGS8lwDANVdAWYsXgQAGl8BR4JfAyN2YAHPMGECMJhhBAQBYgQG9WIB/8ZjAxk6ZANNl2QBhVxlAn4nZgHt8mYBlL1nAaeOaAJtVGkBySVqA1nwagNiu2sBjYZsAcdXbQKJIm4CdPNuAxazbwH+inADK/5wAXwacgF45nIB4LZzAjyCdAFyTXUBmhh2Af/pdgM6XXcDULR3AVJ/eAJGUHkCOxZ6BCDnegJAuHsEGIN8Ai5IfQMjwn0DNRl+AUfffgFQqn8BUXWAAWFGgQF4F4IBd9yCAZ+ngwMmeIQCP0mFAzcPhgFpoIYCTaWHAWk=");
 
         private static CoupleRhythmGame instance;
         private readonly List<HeartNoteView> notes = new List<HeartNoteView>();
@@ -318,7 +296,7 @@ namespace CoupleRhythm
                 // Positive delay values move the chart later to align the playable
                 // note grid with percussion transients in Unity's decoded AudioClip.
                 new SongDefinition("redred", "REDRED", "CORTIS", "redred", 121f, 0.0125f, 40.0f, 62.0f, new Color(1f, 0.31f, 0.42f)),
-                new SongDefinition("its_me", "it's me", "ILLIT · 아일릿", "its_me", 147f, 0.1050f, 32.0f, 59.0f, new Color(0.50f, 0.57f, 1f)),
+                new SongDefinition("its_me", "it's me", "ILLIT · 아일릿", "its_me", 147f, 0.1524f, 32.0f, 59.0f, new Color(0.50f, 0.57f, 1f)),
                 new SongDefinition("lemonade", "LEMONADE", "aespa · 에스파", "lemonade", 128f, 0.0330f, 69.0f, 89.0f, new Color(1f, 0.72f, 0.20f)),
                 new SongDefinition("rude", "RUDE!", "Hearts2Hearts · 하츠투하츠", "rude", 128f, 0.0930f, 170.0f, 198.0f, new Color(0.78f, 0.37f, 0.96f))
             };
@@ -841,14 +819,9 @@ namespace CoupleRhythm
         {
             chartNotes.Clear();
             maximumAccuracyWeight = 0f;
+            float secondsPerBeat = 60f / Mathf.Max(1f, currentSongBpm);
             float lastTargetTime = songDuration - 0.35f;
             int density = Mathf.Clamp(settings.HeartsPerBeat, 1, 4);
-
-            if (selectedSongIndex == 1 && !usingDemoClip &&
-                BuildItsMeAuthoredChart(lastTargetTime, density))
-                return;
-
-            float secondsPerBeat = 60f / Mathf.Max(1f, currentSongBpm);
             int seed = unchecked(System.Environment.TickCount ^ selectedSongIndex * 486187739 ^ ++chartGeneration * 16777619);
             System.Random random = new System.Random(seed);
 
@@ -971,70 +944,6 @@ namespace CoupleRhythm
                 measuresSinceHold = holdCreatedThisMeasure ? 0 : measuresSinceHold + 1;
                 measuresSinceDuet = duetCreatedThisMeasure ? 0 : measuresSinceDuet + 1;
             }
-        }
-
-        private bool BuildItsMeAuthoredChart(float lastTargetTime, int density)
-        {
-            if (ItsMeAuthoredChart == null || ItsMeAuthoredChart.Length == 0)
-                return false;
-
-            float chartDelay = songs[selectedSongIndex].chartDelaySeconds;
-            int nextSoloPlayer = 1;
-            int notesSinceDuet = 0;
-
-            for (int index = 0; index < ItsMeAuthoredChart.Length; index++)
-            {
-                AuthoredRhythmEvent rhythmEvent = ItsMeAuthoredChart[index];
-                if (rhythmEvent.MinimumDensity > density)
-                    continue;
-
-                float absoluteAudioTime = ItsMeChartAnchorSeconds + rhythmEvent.MillisecondsFromAnchor * 0.001f;
-                float targetTime = absoluteAudioTime - clipPlaybackStart - chartDelay;
-                if (targetTime < TravelTime || targetTime >= lastTargetTime)
-                    continue;
-
-                // Put duet notes on measured strong accents and guarantee one at
-                // least every eleven playable events. Solo notes alternate lanes,
-                // making the fixed timing easy to read without random rerolls.
-                bool createDuet = notesSinceDuet >= 7 &&
-                    (rhythmEvent.Strength >= 112 || notesSinceDuet >= 10);
-                HeartKind kind;
-                if (createDuet)
-                {
-                    kind = HeartKind.Duet;
-                    notesSinceDuet = 0;
-                }
-                else
-                {
-                    kind = nextSoloPlayer == 1 ? HeartKind.PlayerOne : HeartKind.PlayerTwo;
-                    nextSoloPlayer = 3 - nextSoloPlayer;
-                    notesSinceDuet++;
-                }
-
-                chartNotes.Add(new ChartNote(kind, targetTime, 0f));
-                maximumAccuracyWeight += GetAccuracyWeight(kind, false);
-            }
-
-            return chartNotes.Count > 0;
-        }
-
-        private static AuthoredRhythmEvent[] DecodeAuthoredRhythmEvents(string encodedEvents)
-        {
-            if (string.IsNullOrEmpty(encodedEvents))
-                return Array.Empty<AuthoredRhythmEvent>();
-
-            byte[] bytes = Convert.FromBase64String(encodedEvents);
-            if (bytes.Length % 4 != 0)
-                throw new InvalidOperationException("Authored rhythm chart data is corrupt.");
-
-            AuthoredRhythmEvent[] events = new AuthoredRhythmEvent[bytes.Length / 4];
-            for (int index = 0; index < events.Length; index++)
-            {
-                int byteIndex = index * 4;
-                ushort milliseconds = (ushort)(bytes[byteIndex] | bytes[byteIndex + 1] << 8);
-                events[index] = new AuthoredRhythmEvent(milliseconds, bytes[byteIndex + 2], bytes[byteIndex + 3]);
-            }
-            return events;
         }
 
         private int ChooseRhythmTemplate(System.Random random, int previousTemplate, int density, bool forceBurst, int measureStartSubdivision)
