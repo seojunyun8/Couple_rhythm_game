@@ -36,7 +36,7 @@ Put audio files that you are allowed to use in `Assets/Resources/CoupleRhythm/Au
 
 When a file is absent, the game automatically uses a generated demo beat so every song card remains playable. BPM values, hit windows, duet sync tolerance, audio offset, and heart density can be adjusted from the in-game admin panel.
 
-Every round builds a fresh chart from four-beat rhythm templates. REDRED keeps the original random timing selection that fits its steady pulse. For `it's me`, `LEMONADE`, and `RUDE!`, Unity-decoded sixteenth-note accent maps guide template selection so notes favor the bundled masters' actual kicks, snares, and rhythmic transients. Lanes, holds, and duet notes still vary each round, and higher admin note-density levels unlock denser subdivisions.
+REDRED builds a fresh chart from the original random four-beat templates that fit its steady pulse. `LEMONADE` and `RUDE!` use Unity-decoded sixteenth-note accent maps to favor their real kicks, snares, and rhythmic transients. `it's me` uses a dedicated authored chart made from the decoded master: every note stores the measured timestamp of a drum attack, so section-to-section groove shifts cannot accumulate BPM-grid drift. Its solo lanes alternate deterministically, duet notes land on strong accents, and higher density levels add measured attacks without moving existing notes.
 
 Density level 4 uses dedicated high-density templates with roughly 6–12 notes per four-beat measure, frequent quarter-beat streams, more alternating inputs, and a higher duet-note rate. Sparse level 1–2 templates are excluded at this level.
 
@@ -44,7 +44,7 @@ Duet notes use a higher 20.5–28% chance on eligible beats, depending on note d
 
 Hold notes must be pressed on the head and kept down until the tail reaches the target; releasing close to the end beat is also accepted. Pressing a button when no matching note is inside the judgement window costs 250 points, and wrong presses are listed separately on the result screen.
 
-Starter BPM values are `121 / 147 / 128 / 128` in the same order as the list above. The bundled masters use per-song chart delays measured against percussion transients in Unity's decoded audio (`12.5 / 105 / 33 / 93 ms`); the admin audio offset remains a separate device/input-latency calibration. Replacing an audio file with a different master requires measuring its chart delay and rebuilding its accent map.
+Starter BPM values are `121 / 147 / 128 / 128` in the same order as the list above. The bundled masters use per-song chart delays measured against percussion transients in Unity's decoded audio (`12.5 / 105 / 33 / 93 ms`); for `it's me`, the authored absolute timestamps cancel that grid delay during playback and hit the measured transients directly. The admin audio offset remains a separate device/input-latency calibration. Replacing an audio file with a different master requires rebuilding its timing data.
 
 ## Highlight play ranges
 
