@@ -138,6 +138,8 @@ namespace CoupleRhythm
         private Text judgementText;
         private Text songHudText;
         private Text resultAccuracyText;
+        private Text resultPlayerOneAccuracyText;
+        private Text resultPlayerTwoAccuracyText;
         private Text resultStatsText;
         private Text resultRewardText;
         private Text paymentStatusText;
@@ -176,6 +178,10 @@ namespace CoupleRhythm
         private float earnedAccuracyWeight;
         private float judgedAccuracyWeight;
         private float maximumAccuracyWeight;
+        private readonly float[] playerEarnedAccuracyWeight = new float[2];
+        private readonly float[] playerJudgedAccuracyWeight = new float[2];
+        private readonly float[] playerMaximumAccuracyWeight = new float[2];
+        private readonly int[] playerWrongPressCount = new int[2];
         private bool adminOpen;
         private bool resumeMusicAfterAdmin;
         private float playbackStartRealtime;
@@ -579,7 +585,7 @@ namespace CoupleRhythm
             fireworksRoot = RuntimeUI.Rect("Fireworks", resultRoot, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
             fireworksRoot.gameObject.SetActive(false);
 
-            RectTransform panel = RuntimeUI.FixedRect("Panel", resultRoot, new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(820, 710));
+            RectTransform panel = RuntimeUI.FixedRect("Panel", resultRoot, new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(820, 820));
             Image panelBg = panel.gameObject.AddComponent<Image>();
             panelBg.sprite = RuntimeUI.RoundedSprite;
             panelBg.type = Image.Type.Sliced;
@@ -587,22 +593,30 @@ namespace CoupleRhythm
             RuntimeUI.AddShadow(panelBg, new Color(0.22f, 0.02f, 0.21f, 0.35f), new Vector2(0, -14));
 
             Text completed = RuntimeUI.Text("Completed", panel, "♥  SONG COMPLETE  ♥", 25, new Color(0.85f, 0.23f, 0.53f));
-            SetFixed(completed.rectTransform, new Vector2(0.5f, 1f), new Vector2(0, -64), new Vector2(650, 48));
+            SetFixed(completed.rectTransform, new Vector2(0.5f, 1f), new Vector2(0, -55), new Vector2(650, 48));
             completed.fontStyle = FontStyle.Bold;
 
             Text title = RuntimeUI.Text("Title", panel, "우리의 정확도!", 52, ink);
-            SetFixed(title.rectTransform, new Vector2(0.5f, 1f), new Vector2(0, -126), new Vector2(650, 70));
+            SetFixed(title.rectTransform, new Vector2(0.5f, 1f), new Vector2(0, -120), new Vector2(650, 70));
             title.fontStyle = FontStyle.Bold;
 
             resultAccuracyText = RuntimeUI.Text("Final Accuracy", panel, "0.0%", 83, new Color(0.79f, 0.21f, 0.51f));
-            SetFixed(resultAccuracyText.rectTransform, new Vector2(0.5f, 1f), new Vector2(0, -235), new Vector2(650, 105));
+            SetFixed(resultAccuracyText.rectTransform, new Vector2(0.5f, 1f), new Vector2(0, -215), new Vector2(650, 105));
             resultAccuracyText.fontStyle = FontStyle.Bold;
 
+            resultPlayerOneAccuracyText = RuntimeUI.Text("Player One Accuracy", panel, "1P 정확도  0.0%", 30, blue);
+            SetFixed(resultPlayerOneAccuracyText.rectTransform, new Vector2(0.5f, 1f), new Vector2(-190, -305), new Vector2(340, 60));
+            resultPlayerOneAccuracyText.fontStyle = FontStyle.Bold;
+
+            resultPlayerTwoAccuracyText = RuntimeUI.Text("Player Two Accuracy", panel, "2P 정확도  0.0%", 30, red);
+            SetFixed(resultPlayerTwoAccuracyText.rectTransform, new Vector2(0.5f, 1f), new Vector2(190, -305), new Vector2(340, 60));
+            resultPlayerTwoAccuracyText.fontStyle = FontStyle.Bold;
+
             resultStatsText = RuntimeUI.Text("Stats", panel, string.Empty, 28, ink);
-            SetFixed(resultStatsText.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0, -25), new Vector2(650, 205));
+            SetFixed(resultStatsText.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0, -45), new Vector2(650, 180));
 
             resultRewardText = RuntimeUI.Text("Reward", panel, string.Empty, 24, new Color(0.79f, 0.21f, 0.51f));
-            SetFixed(resultRewardText.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0, -187), new Vector2(670, 90));
+            SetFixed(resultRewardText.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0, -180), new Vector2(670, 90));
             resultRewardText.fontStyle = FontStyle.Bold;
 
             redeemButton = RuntimeUI.Button("Redeem Prize", panel, "재고 차감 다시 시도", new Color(0.23f, 0.54f, 0.49f), Color.white, 22, RedeemPrize);
@@ -819,6 +833,8 @@ namespace CoupleRhythm
         {
             chartNotes.Clear();
             maximumAccuracyWeight = 0f;
+            playerMaximumAccuracyWeight[0] = 0f;
+            playerMaximumAccuracyWeight[1] = 0f;
             float secondsPerBeat = 60f / Mathf.Max(1f, currentSongBpm);
             float lastTargetTime = songDuration - 0.35f;
             int density = Mathf.Clamp(settings.HeartsPerBeat, 1, 4);
@@ -938,7 +954,9 @@ namespace CoupleRhythm
                     }
 
                     chartNotes.Add(new ChartNote(kind, targetTime, holdDuration));
-                    maximumAccuracyWeight += GetAccuracyWeight(kind, holdDuration > 0f);
+                    float accuracyWeight = GetAccuracyWeight(kind, holdDuration > 0f);
+                    maximumAccuracyWeight += accuracyWeight;
+                    AddPlayerAccuracyWeight(playerMaximumAccuracyWeight, kind, accuracyWeight);
                 }
 
                 measuresSinceHold = holdCreatedThisMeasure ? 0 : measuresSinceHold + 1;
@@ -1067,6 +1085,7 @@ namespace CoupleRhythm
         private void RegisterWrongPress(int player, float songTime)
         {
             wrongPressCount++;
+            playerWrongPressCount[player - 1]++;
             ShowJudgement("WRONG!", player == 1 ? blue : red);
             UpdateHud(songTime);
         }
@@ -1101,10 +1120,12 @@ namespace CoupleRhythm
         {
             float accuracyWeight = GetAccuracyWeight(note.Kind, note.IsHold);
             judgedAccuracyWeight += accuracyWeight;
+            AddPlayerAccuracyWeight(playerJudgedAccuracyWeight, note.Kind, accuracyWeight);
 
             if (rating == HitRating.Perfect)
             {
                 earnedAccuracyWeight += accuracyWeight;
+                AddPlayerAccuracyWeight(playerEarnedAccuracyWeight, note.Kind, accuracyWeight);
                 perfectCount++;
                 combo++;
                 ShowJudgement(note.IsHold ? "PERFECT HOLD ♥" : note.Kind == HeartKind.Duet ? "PERFECT TOGETHER ♥" : "PERFECT!", new Color(1f, 0.85f, 0.28f));
@@ -1112,6 +1133,7 @@ namespace CoupleRhythm
             else if (rating == HitRating.Good)
             {
                 earnedAccuracyWeight += accuracyWeight * GoodAccuracyRatio;
+                AddPlayerAccuracyWeight(playerEarnedAccuracyWeight, note.Kind, accuracyWeight * GoodAccuracyRatio);
                 goodCount++;
                 combo++;
                 ShowJudgement(note.IsHold ? "GOOD HOLD" : note.Kind == HeartKind.Duet ? "GOOD TOGETHER" : "GOOD", cream);
@@ -1206,6 +1228,8 @@ namespace CoupleRhythm
             bool prizeEarned = finalAccuracy >= PrizeAccuracyThreshold;
             ResetCelebration();
             resultAccuracyText.text = FormatAccuracy(finalAccuracy);
+            resultPlayerOneAccuracyText.text = "1P 정확도  " + FormatAccuracy(CalculatePlayerAccuracy(1, true));
+            resultPlayerTwoAccuracyText.text = "2P 정확도  " + FormatAccuracy(CalculatePlayerAccuracy(2, true));
             resultStatsText.text =
                 "PERFECT     " + perfectCount + "\n" +
                 "GOOD          " + goodCount + "\n" +
@@ -1216,13 +1240,13 @@ namespace CoupleRhythm
             SaveCurrentScore();
             if (premiumPrizeEarned)
             {
-                resultRewardText.text = "♥ 100% 달성 · 레전드 인형 대상 ♥";
+                resultRewardText.text = "♥ 100% 달성 · 레전드 인형 2개 대상 ♥";
                 resultRewardText.color = new Color(0.93f, 0.45f, 0.08f);
                 StartCoroutine(CelebrationRoutine());
             }
             else if (prizeEarned)
             {
-                resultRewardText.text = "♥ 일반 인형 대상 ♥";
+                resultRewardText.text = "♥ 일반 인형 2개 대상 ♥";
                 resultRewardText.color = new Color(0.89f, 0.22f, 0.52f);
             }
             else
@@ -1504,14 +1528,14 @@ namespace CoupleRhythm
             }
             prizePending = true;
             redeemButton.interactable = false;
-            resultRewardText.text = (prizeIsLegendary ? "레전드" : "일반") + " 인형 재고를 자동 차감 중입니다. 상품을 아직 건네지 마세요.";
+            resultRewardText.text = (prizeIsLegendary ? "레전드" : "일반") + " 인형 2개 재고를 자동 차감 중입니다. 상품을 아직 건네지 마세요.";
             RhythmFirebaseService.Instance.RedeemPrize(roundId, prizeIsLegendary, (success, error) =>
             {
                 prizePending = false;
                 if (success)
                 {
                     prizeRedeemed = true;
-                    resultRewardText.text = (prizeIsLegendary ? "레전드" : "일반") + " 인형 재고 차감 완료 · 상품을 지급해 주세요.";
+                    resultRewardText.text = (prizeIsLegendary ? "레전드" : "일반") + " 인형 2개 재고 차감 완료 · 인형 2개를 지급해 주세요.";
                     redeemButton.gameObject.SetActive(false);
                     nextGameButton.interactable = true;
                 }
@@ -1536,6 +1560,13 @@ namespace CoupleRhythm
             earnedAccuracyWeight = 0f;
             judgedAccuracyWeight = 0f;
             maximumAccuracyWeight = 0f;
+            for (int i = 0; i < 2; i++)
+            {
+                playerEarnedAccuracyWeight[i] = 0f;
+                playerJudgedAccuracyWeight[i] = 0f;
+                playerMaximumAccuracyWeight[i] = 0f;
+                playerWrongPressCount[i] = 0;
+            }
             accuracyText.text = "정확도  --.-%";
             comboText.text = string.Empty;
             judgementText.text = string.Empty;
@@ -1678,6 +1709,32 @@ namespace CoupleRhythm
             if (possibleWeight <= 0.001f)
                 return 0f;
             return Mathf.Clamp01(earnedAccuracyWeight / possibleWeight) * 100f;
+        }
+
+        private float CalculatePlayerAccuracy(int player, bool includeUnjudgedNotes)
+        {
+            int playerIndex = player - 1;
+            float noteWeight = includeUnjudgedNotes
+                ? playerMaximumAccuracyWeight[playerIndex]
+                : playerJudgedAccuracyWeight[playerIndex];
+            float possibleWeight = noteWeight + playerWrongPressCount[playerIndex] * WrongPressAccuracyWeight;
+            if (possibleWeight <= 0.001f)
+                return 0f;
+            return Mathf.Clamp01(playerEarnedAccuracyWeight[playerIndex] / possibleWeight) * 100f;
+        }
+
+        private static void AddPlayerAccuracyWeight(float[] weights, HeartKind kind, float accuracyWeight)
+        {
+            if (kind == HeartKind.Duet)
+            {
+                float perPlayerWeight = accuracyWeight * 0.5f;
+                weights[0] += perPlayerWeight;
+                weights[1] += perPlayerWeight;
+            }
+            else
+            {
+                weights[kind == HeartKind.PlayerOne ? 0 : 1] += accuracyWeight;
+            }
         }
 
         private static float GetAccuracyWeight(HeartKind kind, bool isHold)

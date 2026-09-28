@@ -34,6 +34,7 @@ namespace CoupleRhythm
         [Serializable] private class ReceiptFields { public StringField kind, stockField; public IntField revenue; }
         [Serializable] private class ReceiptDocument { public ReceiptFields fields; }
         [Serializable] private class StringWrapper { public string value; }
+        private const int PrizeDollQuantity = 2;
         private static string Quoted(string value) => JsonUtility.ToJson(new StringWrapper { value = value ?? "" }).Substring(9).TrimEnd('}');
         private static string Number(string name, int value) => $"\"{name}\":{{\"integerValue\":\"{value}\"}}";
 
@@ -169,15 +170,15 @@ namespace CoupleRhythm
                     !Read(doc.fields.totalPlays, out int plays) || !Read(doc.fields.totalRevenue, out int totalRevenue) ||
                     !Read(doc.fields.totalSuccesses, out int successes))
                 { callback?.Invoke(false, "운영 통계 필드를 확인해 주세요."); yield break; }
-                if (kind == "prize" && ((stockField == "totalDolls" && dolls == 0) ||
-                    (stockField == "totalLegendaryDolls" && legends == 0)))
-                { callback?.Invoke(false, "재고 소진: 지급을 보류하고 운영진에게 알려 주세요."); yield break; }
+                if (kind == "prize" && ((stockField == "totalDolls" && dolls < PrizeDollQuantity) ||
+                    (stockField == "totalLegendaryDolls" && legends < PrizeDollQuantity)))
+                { callback?.Invoke(false, "재고가 2개 미만입니다. 지급을 보류하고 운영진에게 알려 주세요."); yield break; }
                 if ((kind == "start" && (plays == int.MaxValue || revenue < 0 || totalRevenue > int.MaxValue - revenue)) ||
                     (kind == "prize" && successes == int.MaxValue))
                 { callback?.Invoke(false, "운영 통계 범위를 확인해 주세요."); yield break; }
                 string statsFields = kind == "start" ? Number("totalPlays", plays + 1) + "," +
                     Number("totalRevenue", totalRevenue + revenue) : Number(stockField,
-                    (stockField == "totalDolls" ? dolls : legends) - 1) + "," + Number("totalSuccesses", successes + 1);
+                    (stockField == "totalDolls" ? dolls : legends) - PrizeDollQuantity) + "," + Number("totalSuccesses", successes + 1);
                 string mask = kind == "start" ? "\"totalPlays\",\"totalRevenue\"" :
                     "\"" + stockField + "\",\"totalSuccesses\"";
                 string receiptFields = "\"kind\":{\"stringValue\":\"rhythm_" + kind + "\"}," +
